@@ -5,22 +5,24 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.databinding.DataBindingUtil
+import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
 
 class MainActivity : ComponentActivity() {
+
+    lateinit var binding : ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        val btnStart = findViewById<Button>(R.id.btnStartInfo)
-        val btnStop = findViewById<Button>(R.id.btnStopInfo)
+        binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
 
-        btnStart.setOnClickListener {
+        binding.btnStartInfo.setOnClickListener {
             if (checkOverlayPermission()) {
                 startShimejiService()
             } else {
@@ -28,12 +30,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        btnStop.setOnClickListener {
+        binding.btnStopInfo.setOnClickListener {
             stopShimejiService()
         }
     }
 
-    // Kiểm tra quyền vẽ đè
+
     private fun checkOverlayPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(this)
