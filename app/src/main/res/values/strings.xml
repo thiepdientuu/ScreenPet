@@ -3,4 +3,5 @@
     <string name="pet_notification_title">Pet on screen is running ..</string>
     <string name="pet_notification_text">Pet is freely exploring the screen</string>
     <string name="admob_app_id">ca-app-pub-4945756407745123~5530127804</string>
+    <string name="need_permision">You need to grant permission for Pet Show to appear on the screen!</string>
 </resources>

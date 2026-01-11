@@ -8,19 +8,9 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.databinding.DataBindingUtil
 import com.example.petfunny.ui.ShimejiService
-import com.example.petfunny.ui.theme.PetFunnyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +60,7 @@ class MainActivity : ComponentActivity() {
         if (checkOverlayPermission()) {
             startShimejiService()
         } else {
-            Toast.makeText(this, "Bạn cần cấp quyền để Pet hiển thị!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.need_permision), Toast.LENGTH_SHORT).show()
         }
     }
 

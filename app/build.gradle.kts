@@ -13,7 +13,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,5 +59,6 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-ads:24.9.0")
     implementation ("com.google.firebase:firebase-bom:34.7.0")
-
+    implementation ("androidx.fragment:fragment-ktx:1.8.9")
+    implementation ("androidx.activity:activity-ktx:1.9.0")
 }
