@@ -1,4 +1,4 @@
-package com.example.petfunny
+package com.ls.petfunny
 
 import android.content.Intent
 import android.net.Uri
@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.petfunny.ui.ShimejiService
+import com.ls.petfunny.ui.ShimejiService
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

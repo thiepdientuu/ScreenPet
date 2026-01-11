@@ -1,4 +1,4 @@
-package com.example.petfunny.ui
+package com.ls.petfunny.ui
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -20,7 +20,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.core.app.NotificationCompat
-import com.example.petfunny.R
+import com.ls.petfunny.R
 import kotlin.random.Random
 
 class ShimejiService : Service() {

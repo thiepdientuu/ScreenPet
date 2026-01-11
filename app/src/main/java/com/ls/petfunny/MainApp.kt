@@ -1,4 +1,4 @@
-package com.example.petfunny
+package com.ls.petfunny
 
 import android.app.Application
 import android.util.Log

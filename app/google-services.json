@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804342902904",
+    "project_id": "pet-on-screen",
+    "storage_bucket": "pet-on-screen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804342902904:android:ab600aae0d4488aada3d8d",
+        "android_client_info": {
+          "package_name": "com.ls.petfunny"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgPxslAigrm9A0KoQjVyg_FNa2BnsM6oI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
