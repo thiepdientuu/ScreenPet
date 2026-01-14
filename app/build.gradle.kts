@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.crashlytics)
 }
 
 android {
@@ -16,6 +20,12 @@ android {
         versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["dagger.hilt.disableModulesHaveInstallInCheck"] = "true"
+            }
+        }
     }
 
     buildTypes {
@@ -37,10 +47,14 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
-
+    implementation (project(":adslib"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -57,9 +71,16 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("com.google.android.gms:play-services-ads:24.9.0")
-    implementation ("com.google.firebase:firebase-bom:34.7.0")
-    implementation ("androidx.fragment:fragment-ktx:1.8.9")
-    implementation ("androidx.activity:activity-ktx:1.9.0")
-    implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.play.services.ads)
+    implementation (platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation (libs.firebase.config)
+    implementation (libs.firebase.common)
+    implementation (libs.androidx.fragment.ktx)
+    implementation (libs.androidx.activity.ktx)
+    implementation (libs.androidx.constraintlayout)
+    implementation (libs.timber)
+    implementation (libs.glide)
 }

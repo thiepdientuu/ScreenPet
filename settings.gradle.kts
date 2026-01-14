@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "PetFunny"
 include(":app")
- 
+include(":adslib")

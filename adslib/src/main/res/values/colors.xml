@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#fffcf4</color>
+    <color name="colorPrimaryDark">#b3000000</color>
+    <color name="colorAccent">#0093FF</color>
+    <color name="colorSecondary">#86929a</color>
+    <color name="bgColorCard">#010b17</color>
+    <color name="textColorPrimary">#001836</color>
+    <color name="transparent">#00000000</color>
+
+    <color name="black">#001836</color>
+    <color name="black80">#E6091E38</color>
+    <color name="black333">#333333</color>
+    <color name="black222">#222222</color>
+    <color name="detailMainColor">#80091e38</color>
+    <color name="translucent_black30">#4D111111</color>
+    <color name="translucent_black60">#99111111</color>
+    <color name="translucent_black70">#B3111111</color>
+    <color name="input_text_background_color">#33ffffff</color>
+    <color name="input_text_color">#9696A0</color>
+
+    <color name="white">#ffffff</color>
+    <color name="white10">#1Affffff</color>
+    <color name="white_same_2">#ededed</color>
+    <color name="gray_main">#37474f</color>
+    <color name="main_bg_ripple">#65717C</color>
+    <color name="dusk_yellow">#FFCD3E</color>
+    <color name="more_app_dialog_text_color">#534c4c</color>
+    <color name="bg_app">#00000000</color>
+    <color name="unselected_text_bottom_tab">#8FC2FF</color>
+
+    <color name="common_ripple">#1AFFFFFF</color>
+    <color name="color_stroke">#80b1f2ff</color>
+    <color name="white_fe">#FEFEFE</color>
+    <color name="color_text_search">#fefefe</color>
+
+    <color name="color_tablayout">#9fb1c7</color>
+    <color name="color_tablayout_selected">#ffffff</color>
+    <color name="dialog_text_color">#343e60</color>
+    <color name="gray_light">#f3f2f9</color>
+    <color name="color_premium">#8F713E</color>
+    <color name="color_new_ringtones">#766615</color>
+    <color name="color_top_down">#763A05</color>
+    <color name="color_trending">#31E821</color>
+
+    <!--Color gradient-->
+    <color name="color_gradient_start_1">#667F63</color>
+    <color name="color_gradient_end_1">#436462</color>
+    <color name="color_gradient_start_2">#A371B2</color>
+    <color name="color_gradient_end_2">#7F4D8E</color>
+    <color name="color_gradient_start_3">#CB7070</color>
+    <color name="color_gradient_end_3">#B7613C</color>
+    <color name="color_gradient_start_4">#6f95aa</color>
+    <color name="color_gradient_end_4">#366c87</color>
+    <color name="color_gradient_start_5">#667f63</color>
+    <color name="color_gradient_end_5">#436462</color>
+    <color name="color_gradient_start_6">#428983</color>
+    <color name="color_gradient_end_6">#446563</color>
+
+    <color name="color_shadow_text">#80000000</color>
+    <color name="color_view_divide">#19ffffff</color>
+    <color name="color_untrack">#768393</color>
+    <color name="color_view_divide_profile_screen">#99FFFFFF</color>
+    <color name="color_text_search_trend">#FEFEFE</color>
+    <color name="color_hint_edit_text_request">#D8E5EC</color>
+    <color name="color_text_cancel_report">#536295</color>
+    <color name="view_bg">#B3000000</color>
+
+    <color name="color_check_box">#1792e1</color>
+    <color name="color_next_ring_name">#4ae1fb</color>
+</resources>
