@@ -1,7 +1,7 @@
 package com.ls.petfunny
 
 import android.app.Application
-import com.google.android.gms.ads.MobileAds
+import com.ls.petfunny.utils.AppConfig
 import com.ls.petfunny.utils.AppLogger
 import dagger.hilt.android.HiltAndroidApp
 
@@ -11,9 +11,8 @@ class MainApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instances = this
-        MobileAds.initialize(this) { initializationStatus ->
-            AppLogger.d("HIHI ---> AdMob initialized: $initializationStatus")
-        }
+        AppConfig.setUp(this)
+        AppLogger.init()
     }
 
     companion object{
