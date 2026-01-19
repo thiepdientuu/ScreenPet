@@ -7,6 +7,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.Firebase
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.remoteConfig
+import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.ls.petfunny.databinding.ActivitySplashBinding
 import com.ls.petfunny.ui.ads.AdManager
 import com.ls.petfunny.ui.intro.IntroFragment
@@ -29,7 +33,28 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_splash)
+        loadConfig()
         checkConsent()
+    }
+
+    private fun loadConfig(){
+        val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig
+        val configSettings = remoteConfigSettings {
+            minimumFetchIntervalInSeconds = 3600
+        }
+        remoteConfig.setConfigSettingsAsync(configSettings)
+        remoteConfig.fetchAndActivate()
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    val showAds = remoteConfig.getBoolean("configAds")
+                    if (showAds) {
+                        adManager.setVipUser(false)
+                    } else {
+                        adManager.setVipUser(true)
+                    }
+                    AppLogger.d("Fetch and activate succeeded show ads: $showAds")
+                }
+            }
     }
 
     private fun checkConsent(){
@@ -43,8 +68,11 @@ class SplashActivity : AppCompatActivity() {
         }, initMobileAdSuccess = {
             AppLogger.d("HIHI ---> initMobileAdSuccess")
             loadBannerAd()
-            loadNativeIntro()
             startCountDownTimer()
+            lifecycleScope.launch {
+                delay(2000)
+                loadNativeIntro()
+            }
         })
     }
 
