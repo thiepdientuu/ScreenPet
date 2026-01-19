@@ -83,4 +83,8 @@ dependencies {
     implementation (libs.androidx.constraintlayout)
     implementation (libs.timber)
     implementation (libs.glide)
+    //Lottie
+    implementation (libs.lottie)
+    implementation (libs.androidx.appcompat)
+    implementation (libs.androidx.fragment.ktx.v171)
 }

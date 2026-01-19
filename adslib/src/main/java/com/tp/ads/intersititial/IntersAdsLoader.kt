@@ -13,6 +13,7 @@ import com.tp.ads.base.AdsConfig
 import com.tp.ads.base.AdsLoaderListener
 import com.tp.ads.base.AdsShowerListener
 import com.tp.ads.base.BaseLoader
+import com.tp.ads.utils.AdCommonUtils
 import com.tp.ads.utils.AppSession
 import com.tp.ads.utils.EventUtils
 import com.tp.ads.utils.Logger
@@ -29,7 +30,7 @@ class IntersAdsLoader constructor(
     private var activityWeakRef: WeakReference<Activity>? = null
 
     var isLoadingInter = false
-    private var intervalShowInter = 40000L
+    private var intervalShowInter = 10000L
     private var lastTimeShowInter = 0L
 
     private var isForceLoadInter = false
@@ -67,7 +68,7 @@ class IntersAdsLoader constructor(
         isForceLoadInter = isForceLoad
         Logger.w(TAG, "InterAdsLoader-----> handler load InterAds")
         val adRequest = buildAdRequest(isInter = true)
-        InterstitialAd.load(context, adsInterId, adRequest, object : InterstitialAdLoadCallback() {
+        InterstitialAd.load(context, AdCommonUtils.INTER_ALL_KEY, adRequest, object : InterstitialAdLoadCallback() {
             override fun onAdFailedToLoad(adError: LoadAdError) {
                 TrackingUtils.logEvent(EventUtils.INTERSTITIAL + "load_fail")
                 _interstitialAd = null
@@ -99,7 +100,7 @@ class IntersAdsLoader constructor(
         isForceLoadInter = isForceLoad
         Logger.w(TAG, "InterAdsLoader-----> handler load InterAds HIGH adUnit = $adsInterHigh")
         val adRequest = buildAdRequest(isInter = true)
-        InterstitialAd.load(context, this.adsInterHigh, adRequest, object : InterstitialAdLoadCallback() {
+        InterstitialAd.load(context, AdCommonUtils.INTER_ALL_HIGH_KEY, adRequest, object : InterstitialAdLoadCallback() {
             override fun onAdFailedToLoad(adError: LoadAdError) {
                 TrackingUtils.logEvent(EventUtils.INTERSTITIAL + "load_fail")
                 _interstitialAd = null

@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Shimeji Control Center"
+            android:text="@string/msg_tittlhome"
             android:textSize="24sp"
             android:textStyle="bold"
             android:layout_marginBottom="32dp"/>
@@ -21,7 +21,7 @@
             android:id="@+id/btnStartInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bắt đầu Shimeji"
+            android:text="@string/on_shime"
             android:backgroundTint="#4CAF50"/>
 
         <Button
@@ -29,14 +29,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Tắt Shimeji"
+            android:text="@string/offShime"
             android:backgroundTint="#F44336"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Lưu ý: Bạn cần cấp quyền 'Hiển thị trên ứng dụng khác' để app hoạt động."
+            android:text="@string/msg_permíssion_info"
             android:gravity="center"
             android:textColor="#757575"/>
 

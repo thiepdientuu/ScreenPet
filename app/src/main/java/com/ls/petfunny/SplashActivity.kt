@@ -2,21 +2,24 @@ package com.ls.petfunny
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.ls.petfunny.databinding.ActivitySplashBinding
-import com.ls.petfunny.ui.ads.AdCommonUtils
 import com.ls.petfunny.ui.ads.AdManager
+import com.ls.petfunny.ui.intro.IntroFragment
 import com.ls.petfunny.utils.AppLogger
+import com.ls.petfunny.utils.setSafeOnClickListener
+import com.tp.ads.utils.AdCommonUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SplashActivity : ComponentActivity() {
+class SplashActivity : AppCompatActivity() {
 
     @Inject
     lateinit var adManager: com.tp.ads.base.AdManager
@@ -26,7 +29,6 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_splash)
-        enableEdgeToEdge()
         checkConsent()
     }
 
@@ -41,8 +43,14 @@ class SplashActivity : ComponentActivity() {
         }, initMobileAdSuccess = {
             AppLogger.d("HIHI ---> initMobileAdSuccess")
             loadBannerAd()
+            loadNativeIntro()
             startCountDownTimer()
         })
+    }
+
+    private fun loadNativeIntro() {
+        adManager.loadNativeIntro1(AdCommonUtils.NATIVE_INTRO1_KEY)
+        adManager.loadNativeIntro2(AdCommonUtils.NATIVE_INTRO2_KEY)
     }
 
     private fun startCountDownTimer(){
@@ -65,7 +73,26 @@ class SplashActivity : ComponentActivity() {
         }
     }
 
-    private fun handleFinishShowInterSplash(){
+    private fun handleFinishShowInterSplash() {
+        binding.containerIntro.visibility = View.VISIBLE
+        binding.containerIntro.setSafeOnClickListener {  }
+        addFragment(
+            IntroFragment.newInstances(
+                getString(R.string.msg_tittle_intro1),
+                getString(R.string.msg_msg_intro1),
+                IntroFragment.TYPE_INTRO_1
+            )
+        )
+    }
+
+    fun addFragment(fragment : Fragment){
+        supportFragmentManager.beginTransaction()
+            .add(R.id.containerIntro, fragment)
+            .addToBackStack(fragment::class.java.simpleName)
+            .commit()
+    }
+
+    fun gotoHome(){
         startMainActivity()
     }
 
@@ -93,6 +120,10 @@ class SplashActivity : ComponentActivity() {
             container = binding.containerAd,
             showCollapsible = true
         )
+    }
+
+    override fun onBackPressed() {
+
     }
 
     companion object{

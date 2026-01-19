@@ -6,20 +6,28 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.ads.AdError
 import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
+import com.tp.ads.base.AdManager
+import com.tp.ads.base.AdsShowerListener
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-class MainActivity : ComponentActivity() {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var adManager: AdManager
 
     lateinit var binding : ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        adManager.loadInterAds()
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
 
         binding.btnStartInfo.setOnClickListener {
@@ -60,7 +68,22 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (checkOverlayPermission()) {
-            startShimejiService()
+            adManager.showInterAds(this, object  : AdsShowerListener() {
+                override fun onAdDismissedFullScreenContent() {
+                    super.onAdDismissedFullScreenContent()
+                    startShimejiService()
+                }
+
+                override fun onShowAdsError() {
+                    super.onShowAdsError()
+                    startShimejiService()
+                }
+
+                override fun onAdFailedToShowFullScreenContent(p0: AdError) {
+                    super.onAdFailedToShowFullScreenContent(p0)
+                    startShimejiService()
+                }
+            })
         } else {
             Toast.makeText(this, getString(R.string.need_permision), Toast.LENGTH_SHORT).show()
         }

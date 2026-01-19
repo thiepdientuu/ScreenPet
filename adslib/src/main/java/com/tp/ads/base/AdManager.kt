@@ -33,6 +33,7 @@ import com.tp.ads.openads.OpenAdsLoader
 import com.tp.ads.pref.AdsPreferencesHelper
 import com.tp.ads.rewarded.RewardedAdsLoader
 import com.tp.ads.rewardedinters.RewardedInterAdsLoader
+import com.tp.ads.utils.AdCommonUtils
 import com.tp.ads.utils.AdsUtils
 import com.tp.ads.utils.AppSession
 import com.tp.ads.utils.EventUtils
@@ -189,7 +190,7 @@ class AdManager @Inject constructor(
         }
         Logger.w(IntersAdsLoader.TAG, "AdManager -----handler load InterAds splash")
         val adRequest = buildAdRequest()
-        InterstitialAd.load(context, adUnitInterSplash, adRequest, object : InterstitialAdLoadCallback() {
+        InterstitialAd.load(context, AdCommonUtils.INTER_SPLASH_NORMAL_KEY, adRequest, object : InterstitialAdLoadCallback() {
             override fun onAdFailedToLoad(adError: LoadAdError) {
                 interSplash = null
                 interSplashLoadFail = true
@@ -217,7 +218,7 @@ class AdManager @Inject constructor(
         val adRequest = buildAdRequest()
         InterstitialAd.load(
             context,
-            adUnitInterSplashHigh.ifEmpty { DEFAULT_INTER_SPLASH_KEY_HIGH },
+            AdCommonUtils.INTER_SPLASH_HIGH_KEY,
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {
@@ -322,12 +323,10 @@ class AdManager @Inject constructor(
 
     //----------------------------------------------------------------------------------------------
     fun loadInterAds() {
-        if (supportLoadCacheInter) {
-            interAdsLoader.loadInterHighAd(object : AdsLoaderListener() {
-                override fun onLoadFinish() {
-                }
-            }, false)
-        }
+        interAdsLoader.loadInterHighAd(object : AdsLoaderListener() {
+            override fun onLoadFinish() {
+            }
+        }, false)
     }
 
     fun loadCacheOpenAds() {
@@ -1009,7 +1008,6 @@ class AdManager @Inject constructor(
                 override fun onAdImpression() {
                     Logger.w(TAG, "NativeFlow ---> NativeAds  nativeIntro1  onAdImpression")
                     didShowNativeIntro1 = true
-                    nativeIntro1.value = null
                     TrackingUtils.logEvent(EventUtils.NATIVE + "nativeIntro1_impression")
                 }
             })
@@ -1051,7 +1049,6 @@ class AdManager @Inject constructor(
                 override fun onAdImpression() {
                     Logger.w(TAG, "NativeFlow ---> NativeAds  nativeIntro2  onAdImpression")
                     didShowNativeIntro2 = true
-                    nativeIntro2.value = null
                     TrackingUtils.logEvent(EventUtils.NATIVE + "nativeIntro2_impression")
                 }
             })
@@ -1102,7 +1099,7 @@ class AdManager @Inject constructor(
     }
 
     fun releaseNativeSuccess() {
-        nativeSuccessRingtone.value = null
+
     }
 
     fun loadNativeDownloadRing(adsUnit: String) {
@@ -1137,7 +1134,7 @@ class AdManager @Inject constructor(
     }
 
     fun releaseNativeDownload() {
-        nativeDownloadRingtone.value = null
+
     }
 
     fun loadNativeAds(
