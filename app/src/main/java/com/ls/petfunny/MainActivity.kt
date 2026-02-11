@@ -7,14 +7,23 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.ads.AdError
 import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
+import com.ls.petfunny.ui.adapter.ShimejiAdapter
+import com.ls.petfunny.utils.AppLogger
+import com.ls.petfunny.utils.MainViewModel
 import com.tp.ads.base.AdManager
 import com.tp.ads.base.AdsShowerListener
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -23,13 +32,24 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var adManager: AdManager
 
+    private val viewModel: MainViewModel by viewModels()
+
     lateinit var binding : ActivityMainBinding
+
+    // 3. Khởi tạo Adapter
+    private val shimejiAdapter = ShimejiAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         adManager.loadInterAds()
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+        setOnClickListener()
+        setUpListPet()
+        setUpObserver()
+        viewModel.loadPack()
+    }
 
+    private fun setOnClickListener() {
         binding.btnStartInfo.setOnClickListener {
             if (checkOverlayPermission()) {
                 startShimejiService()
@@ -40,6 +60,32 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnStopInfo.setOnClickListener {
             stopShimejiService()
+        }
+    }
+
+    private fun setUpObserver() {
+        lifecycleScope.launch {
+            // Chỉ thu thập dữ liệu khi Activity ở trạng thái STARTED hoặc RESUMED
+            // Tự động dừng khi Activity vào Background (STOPPED)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.topPackCharacters.collect { characters ->
+                    if (characters.isNotEmpty()) {
+                        shimejiAdapter.submitList(characters)
+                    } else {
+                        // Xử lý khi danh sách trống nếu cần
+                        AppLogger.d("Danh sách nhân vật trống")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setUpListPet() {
+        binding.rvPet.apply {
+            // Hiển thị 4 cột như yêu cầu của bạn
+            layoutManager = GridLayoutManager(this@MainActivity, 4)
+            adapter = shimejiAdapter
+            setHasFixedSize(true)
         }
     }
 

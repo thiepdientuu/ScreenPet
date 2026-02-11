@@ -87,4 +87,10 @@ dependencies {
     implementation (libs.lottie)
     implementation (libs.androidx.appcompat)
     implementation (libs.androidx.fragment.ktx.v171)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
+    implementation(libs.converter.gson)
+    implementation(libs.retrofit)
+    implementation(libs.androidx.recyclerview)
+
 }
