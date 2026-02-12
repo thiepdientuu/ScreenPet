@@ -14,14 +14,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.google.android.gms.ads.AdError
 import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
 import com.ls.petfunny.ui.adapter.ShimejiAdapter
 import com.ls.petfunny.utils.AppLogger
-import com.ls.petfunny.utils.MainViewModel
 import com.tp.ads.base.AdManager
-import com.tp.ads.base.AdsShowerListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,8 +33,12 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var binding : ActivityMainBinding
 
-    // 3. Khởi tạo Adapter
-    private val shimejiAdapter = ShimejiAdapter()
+
+    private val shimejiAdapter by lazy {
+        ShimejiAdapter { shimejiGif ->
+            viewModel.downloadShimeji(shimejiGif)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +79,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // Tư duy Senior: Thu thập Flow một cách an toàn
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.mascotUiState.collect { list ->
+                    AppLogger.d("HIHI ---> Flow nhận dữ liệu mới: ${list.size} items")
+                }
+            }
+        }
     }
 
     private fun setUpListPet() {
@@ -114,22 +124,23 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (checkOverlayPermission()) {
-            adManager.showInterAds(this, object  : AdsShowerListener() {
-                override fun onAdDismissedFullScreenContent() {
-                    super.onAdDismissedFullScreenContent()
-                    startShimejiService()
-                }
-
-                override fun onShowAdsError() {
-                    super.onShowAdsError()
-                    startShimejiService()
-                }
-
-                override fun onAdFailedToShowFullScreenContent(p0: AdError) {
-                    super.onAdFailedToShowFullScreenContent(p0)
-                    startShimejiService()
-                }
-            })
+            startShimejiService()
+//            adManager.showInterAds(this, object  : AdsShowerListener() {
+//                override fun onAdDismissedFullScreenContent() {
+//                    super.onAdDismissedFullScreenContent()
+//                    startShimejiService()
+//                }
+//
+//                override fun onShowAdsError() {
+//                    super.onShowAdsError()
+//                    startShimejiService()
+//                }
+//
+//                override fun onAdFailedToShowFullScreenContent(p0: AdError) {
+//                    super.onAdFailedToShowFullScreenContent(p0)
+//                    startShimejiService()
+//                }
+//            })
         } else {
             Toast.makeText(this, getString(R.string.need_permision), Toast.LENGTH_SHORT).show()
         }

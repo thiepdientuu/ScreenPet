@@ -5,6 +5,7 @@ object Constants {
 	const val PREF_NAME = "petFunny"
 	const val DB_NAME = "petfunny.db"
 	var baseUrl = "https://www.google.com/"
+	var storagePet = "https://space.akimeji.com/"
 
 	val STORAGE_PERMISSION = arrayOf(
 		android.Manifest.permission.READ_EXTERNAL_STORAGE,

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
+    alias(libs.plugins.kotlin.ksp)
 }
 
 android {
@@ -92,5 +93,6 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.retrofit)
     implementation(libs.androidx.recyclerview)
-
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
 }

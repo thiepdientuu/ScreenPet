@@ -1,6 +1,9 @@
 package com.ls.petfunny.di
 
-import com.ls.petfunny.data.PacksResponse
+import com.ls.petfunny.data.model.PacksResponse
+import com.ls.petfunny.di.repository.Helper
+import com.ls.petfunny.di.repository.ShimejiRepository
+import com.ls.petfunny.di.repository.SpritesService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,6 +53,12 @@ object NetworkModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
         return retrofit.create(ApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSpritesService(helper: Helper, shimejiRepository: ShimejiRepository): SpritesService {
+        return SpritesService(helper, shimejiRepository)
     }
 }
 

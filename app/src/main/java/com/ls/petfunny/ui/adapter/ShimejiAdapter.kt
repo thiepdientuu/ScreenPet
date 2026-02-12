@@ -6,28 +6,39 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.ls.petfunny.data.ShimejiGif
+import com.ls.petfunny.R
+import com.ls.petfunny.data.model.ShimejiGif
 import com.ls.petfunny.databinding.ItemShimejiBinding
 
-class ShimejiAdapter : ListAdapter<ShimejiGif, ShimejiAdapter.ShimejiViewHolder>(ShimejiDiffCallback()) {
+class ShimejiAdapter(private val onItemClick: (ShimejiGif) -> Unit) :
+    ListAdapter<ShimejiGif, ShimejiAdapter.ShimejiViewHolder>(ShimejiDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShimejiViewHolder {
         val binding = ItemShimejiBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ShimejiViewHolder(binding)
+        return ShimejiViewHolder(binding, onItemClick)
     }
 
     override fun onBindViewHolder(holder: ShimejiViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    class ShimejiViewHolder(private val binding: ItemShimejiBinding) : RecyclerView.ViewHolder(binding.root) {
+    class ShimejiViewHolder(private val binding: ItemShimejiBinding, private val onItemClick: (ShimejiGif) -> Unit) :
+        RecyclerView.ViewHolder(binding.root) {
+        private var currentItem: ShimejiGif? = null
+
+        init {
+            binding.root.setOnClickListener {
+                currentItem?.let(onItemClick)
+            }
+        }
 
         fun bind(item: ShimejiGif) {
             binding.tvName.text = item.name ?: item.nick ?: "Unknown"
-
+            currentItem = item
             // Sử dụng Glide để load ảnh/gif
             Glide.with(itemView.context)
-                .load(item.thumb ?: item.shimejiGif) // Ảnh chờ
+                .load(item.thumb ?: item.shimejiGif)
+                .placeholder(R.drawable.ic_launcher_foreground)
                 .into(binding.imgCharacter)
         }
     }

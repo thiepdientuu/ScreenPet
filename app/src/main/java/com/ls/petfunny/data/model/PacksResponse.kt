@@ -1,4 +1,4 @@
-package com.ls.petfunny.data
+package com.ls.petfunny.data.model
 
 import com.google.gson.annotations.SerializedName
 

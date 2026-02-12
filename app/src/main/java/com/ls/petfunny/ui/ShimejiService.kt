@@ -1,334 +1,429 @@
 package com.ls.petfunny.ui
 
-import android.app.Notification
+import android.app.KeyguardManager
+import android.app.Notification.PRIORITY_LOW
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
-import android.graphics.drawable.AnimationDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
-import android.util.DisplayMetrics
+import android.os.Message
 import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
-import android.widget.ImageView
+import android.view.WindowManager.LayoutParams
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.content.res.ResourcesCompat
 import com.ls.petfunny.R
-import kotlin.random.Random
+import com.ls.petfunny.data.model.Sprites
+import com.ls.petfunny.di.repository.Helper
+import com.ls.petfunny.di.repository.SpritesService
+import com.ls.petfunny.ui.custom.ShimejiView
+import com.ls.petfunny.utils.AppConstants
+import com.ls.petfunny.utils.AppLogger
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ShimejiService : Service() {
 
-    private lateinit var windowManager: WindowManager
-    private lateinit var petView: View
-    private lateinit var params: WindowManager.LayoutParams
-    private lateinit var imgPet: ImageView
+    @Inject
+    lateinit var helper: Helper
 
-    // Biến dùng cho việc kéo thả
-    private var initialX = 0
-    private var initialY = 0
-    private var initialTouchX = 0f
-    private var initialTouchY = 0f
-    private var isDragging = false // Cờ kiểm tra xem người dùng có đang giữ Pet không
+    @Inject
+    lateinit var spritesService: SpritesService
 
-    // Biến môi trường
-    private var screenWidth = 0
-    private var screenHeight = 0
+    internal var isShimejiVisible = true
 
-    // Logic chuyển động (AI & Physics)
-    private val handler = Handler(Looper.getMainLooper())
-    private var actionState = STATE_FALLING // Trạng thái hiện tại
-    private var lastActionState = -1 // Trạng thái trước đó (để kiểm tra thay đổi animation)
-    private var timeToNextAction = 0 // Thời gian đếm ngược để đổi hành động
+    lateinit var mWindowManager: WindowManager
 
-    // Định nghĩa các trạng thái
-    companion object {
-        const val STATE_IDLE = 0        // Đứng chơi
-        const val STATE_WALK_LEFT = 1   // Đi bộ sang trái
-        const val STATE_WALK_RIGHT = 2  // Đi bộ sang phải
-        const val STATE_FALLING = 3     // Đang rơi tự do
-        const val STATE_DRAGGING = 4    // Đang bị người dùng kéo
-        const val STATE_RUN_LEFT = 5    // Chạy nhanh trái
-        const val STATE_RUN_RIGHT = 6   // Chạy nhanh phải
-        const val STATE_FLY = 7         // Bay lượn
+    private var prefListener: PreferenceChangeListener? = null
+    private var prefs: SharedPreferences? = null
 
-        const val FLOOR_OFFSET = 150    // Khoảng cách từ đáy màn hình
-        const val WALK_SPEED = 10        // Tốc độ đi bộ
-        const val RUN_SPEED = 20       // Tốc độ chạy
-        const val FLY_SPEED = 15         // Tốc độ bay
-        const val GRAVITY_SPEED = 20    // Tốc độ rơi
+    private var screenStatusReceiver: BroadcastReceiver? = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val kgMgr = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val action = intent.action
+            when {
+                "android.intent.action.SCREEN_OFF" == action -> {
+                    this@ShimejiService.onScreenOff()
+                }
+
+                kgMgr.isKeyguardLocked -> {
+                    setForegroundNotification(true, true)
+                }
+
+                "android.intent.action.USER_PRESENT" == action -> {
+                    if (isShimejiVisible) {
+                        setForegroundNotification(true)
+                        this@ShimejiService.onScreenOn()
+                    } else {
+                        setForegroundNotification(false)
+                    }
+                }
+            }
+        }
+    }
+
+    internal val shimejiViews = ArrayList<ShimejiView>(12)
+
+    private val viewParams = HashMap<Int, LayoutParams>(12)
+
+    private inner class PreferenceChangeListener() :
+        SharedPreferences.OnSharedPreferenceChangeListener {
+
+        override fun onSharedPreferenceChanged(prefs: SharedPreferences?, key: String?) {
+            if (isShimejiVisible && (key == AppConstants.ACTIVE_SHIMEJI_IDS || key == AppConstants.SIZE_MULTIPLIER)
+            ) {
+                removeMascotViews()
+                loadMascotViews()
+            } else if (key == AppConstants.ANIMATION_SPEED) {
+                val speed = helper.getSpeedMultiplier(baseContext)
+                for (view in shimejiViews) {
+                    view.setSpeedMultiplier(speed)
+                }
+            } else if (key == AppConstants.SHOW_NOTIFICATION) {
+                if (helper.getNotificationVisibility(baseContext)) {
+                    setForegroundNotification(isShimejiVisible)
+                    return
+                }
+                if (!isShimejiVisible) {
+                    toggleShimejiStatus()
+                }
+                stopForeground(true)
+            } else if (key == AppConstants.REAPPEAR_DELAY) {
+                for (mascotView2 in shimejiViews) {
+                    if (isShimejiVisible) {
+                        mascotView2.cancelReappearTimer()
+                        mascotView2.resumeAnimation()
+                    }
+                }
+            }
+
+        }
+    }
+
+    internal var handler: Handler = Handler()
+
+    override fun onCreate() {
+        super.onCreate()
+        AppLogger.d("", "HIHI ${TAG} --->onCreate ShimejiService")
+        try {
+            mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            handler = Handler(Handler.Callback {
+                try {
+                    onHandleMessage(it)
+                } catch (e: Exception) {
+                    return@Callback false
+                }
+            })
+            prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        try {
+            val action = intent?.action
+            AppLogger.e("${TAG} ---> onStartCommand action=%s", action)
+            if (action == ACTION_TOGGLE) {
+                toggleShimejiStatus()
+            } else {
+                setForegroundNotification(isShimejiVisible)
+                removeMascotViews()
+                loadMascotViews()
+                if (this.prefs == null) {
+                    this.prefListener = PreferenceChangeListener()
+                    this.prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
+                    this.prefs!!.registerOnSharedPreferenceChangeListener(this.prefListener)
+                }
+                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_OFF"))
+                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_ON"))
+                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.USER_PRESENT"))
+            }
+        } catch (e: Exception) {
+            AppLogger.e(e.message)
+        }
+        return START_STICKY
+    }
+
+    internal fun toggleShimejiStatus() {
+        this.isShimejiVisible = !this.isShimejiVisible
+        setForegroundNotification(isShimejiVisible)
+        for (mascotView: ShimejiView in shimejiViews) {
+            if (mascotView.isAttachedToWindow) {
+                if (isShimejiVisible) {
+                    add(mascotView)
+                } else {
+                    mascotView.cancelReappearTimer()
+                    remove(mascotView)
+                }
+            }
+        }
+        if (isShimejiVisible) {
+            handler.sendEmptyMessage(1)
+        }
+    }
+
+    fun add(mascotView: ShimejiView) {
+        handler.sendEmptyMessage(1)
+        mascotView.resumeAnimation()
+    }
+
+
+    fun remove(mascotView: ShimejiView?) {
+        if (mascotView != null && mascotView.isShown) {
+            mascotView.pauseAnimation()
+            mascotView.isHidden = true
+            mWindowManager.removeViewImmediate(mascotView)
+        }
+    }
+
+    fun loadMascotViews() {
+        try {
+            lateinit var params: LayoutParams
+            val mascots: List<Int> = helper.getActiveTeamMembers()
+            AppLogger.e("${TAG} ---> Loading list mascots active: %s", mascots)
+            spritesService.loadSpritesForMascots(mascots)
+            AppLogger.e("${TAG} ---> Start loop add mascots to screen")
+            loop@ for (intValue in mascots) {
+                AppLogger.e("${TAG} ---> Start loop add mascots to screen 222222 intvalue: $intValue")
+                if (intValue != -1) {
+                    val spritesById: Sprites = spritesService.getSpritesById(intValue)
+                    if (spritesById == null || spritesById.isEmpty()) {
+                        AppLogger.e("${TAG} ---> Frames for mascot $intValue were empty. Skipping")
+                    } else {
+                        params = LayoutParams(
+                            LayoutParams.WRAP_CONTENT,
+                            LayoutParams.WRAP_CONTENT,
+                            LayoutParams.TYPE_APPLICATION_OVERLAY,
+                            520,
+                            PixelFormat.TRANSLUCENT
+                        )
+
+                        params.gravity = Gravity.START or Gravity.TOP
+                        var view: ShimejiView?
+
+                        view = ShimejiView(this)
+                        view.setupMascot(intValue, true, true)
+                        view.setMascotEventsListener(object : ShimejiView.MascotEventNotifier {
+                            override fun hideMascot() {
+                                this@ShimejiService.remove(view)
+                            }
+
+                            override fun showMascot() {
+                                this@ShimejiService.add(view)
+                            }
+                        })
+                        view.let { this.shimejiViews.add(it) }
+                        params.width = view.width1
+                        params.height = (view.height1 ?: return)
+
+                        viewParams[view.getUniqueId().toInt()] = params
+                        mWindowManager.addView(view, params)
+                        AppLogger.e("${TAG} ---> add mascots to screen: list mascots: ${intValue}")
+                    }
+
+                }
+            }
+            handler.sendEmptyMessage(1)
+
+
+        } catch (e: Throwable) {
+            AppLogger.e(e.message)
+        }
+    }
+
+    internal fun removeMascotViews() {
+        AppLogger.d("", "HIHI ${TAG} ---> remove all MascotViews")
+        handler.removeMessages(1)
+        for (view in shimejiViews) {
+            if (view.isShown) {
+                view.pauseAnimation()
+                mWindowManager.removeViewImmediate(view)
+            }
+        }
+        shimejiViews.clear()
+        viewParams.clear()
+    }
+
+    private fun onHandleMessage(msg: Message): Boolean {
+        if (msg.what != 1) {
+            return false
+        }
+        this.handler.removeMessages(1)
+        shimejiViews.forEach { view ->
+            if (view.isAttachedToWindow) {
+                if (!view.isHidden && view.isVisible) {
+                    try {
+                        //isAttachedToWindow
+                        val paramsShimeji = viewParams[view.getUniqueId().toInt()]
+                        if (view.parent == null) {
+                            try {
+                                mWindowManager.addView(view, paramsShimeji)
+                                view.isHidden = false
+                            } catch (e: Exception) {
+                                AppLogger.e(e.message)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.e(e.message)
+                    }
+                }
+                if (view.isVisible && view.height1 != null) {
+                    val params = viewParams[view.getUniqueId().toInt()]
+                    if (params != null) {
+                        try {
+                            params.height = view.height1!!
+                            params.width = view.width1
+                            params.x = view.x.toInt()
+                            params.y = view.y.toInt()
+                            mWindowManager.updateViewLayout(view, params)
+                        } catch (e: Exception) {
+                            AppLogger.e(e.message)
+                        }
+                    }
+                }
+            }
+        }
+        handler.sendEmptyMessageDelayed(1, 16)
+        return true
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            AppLogger.d("HIHI ${TAG} --> onDestroy")
+            prefs?.unregisterOnSharedPreferenceChangeListener(this.prefListener)
+            unregisterReceiver(this.screenStatusReceiver)
+        } catch (e: Exception) {
+            AppLogger.e("Prevented unregister Receiver crash")
+        }
+        removeMascotViews()
+    }
+
+    internal fun onScreenOff() {
+        handler.removeMessages(1)
+        for (v in this.shimejiViews) {
+            if (!v.isHidden) {
+                v.pauseAnimation()
+            }
+        }
+    }
+
+    internal fun onScreenOn() {
+        handler.removeMessages(1)
+        for (v in this.shimejiViews) {
+            if (!v.isHidden) {
+                v.resumeAnimation()
+            }
+        }
+        handler.sendEmptyMessage(1)
+    }
+
+    internal fun setForegroundNotification(start: Boolean, islockscreen: Boolean = false) {
+        if (helper.getNotificationVisibility(this)) {
+            //Title
+            var text: CharSequence = if (start) {
+                if (islockscreen) {
+                    getText(R.string.shimeji_notif_visible_lockscreen)
+                } else {
+                    getText(R.string.shimeji_notif_visible)
+                }
+            } else {
+                getText(R.string.shimeji_notif_hidden)
+            }
+            val sub = if (start) {
+                if (islockscreen) {
+                    getText(R.string.shimeji_notif_visible_lockscreen_subtitle)
+                } else {
+                    getText(R.string.shimeji_notif_disable)
+                }
+            } else {
+                getText(R.string.shimeji_notif_enable)
+            }
+            val intent =
+                PendingIntent.getService(
+                    this,
+                    0,
+                    Intent(this, ShimejiService::class.java).setAction(ACTION_TOGGLE),
+                    FLAG_IMMUTABLE
+                )
+            if (Build.VERSION.SDK_INT >= 26) {
+                setupNotificationChannel()
+            }
+
+            val largeIcon = try {
+                val d = ResourcesCompat.getDrawable(resources, R.mipmap.ic_launcher, theme)
+                helper.drawableToBitmap(d!!)
+            } catch (e: Exception) {
+                BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+            }
+            val builder = NotificationCompat.Builder(this, CHANNEL_NOTIFY)
+                .setContentTitle(text)
+                .setContentText(sub)
+                .setPriority(PRIORITY_LOW)
+                .setColor(getColor(R.color.purple_200))
+                .setLargeIcon(largeIcon)
+                .setOngoing(true).setContentIntent(intent)
+                .setSmallIcon(R.mipmap.ic_launcher)
+            val notification = builder.build()
+            if (start) {
+                startForeground(99, notification)
+                return
+            }
+            val noti: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            noti.notify(99, notification)
+
+        }
+    }
+
+
+    @RequiresApi(api = 26)
+    private fun setupNotificationChannel() {
+        val mNotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = NotificationChannel(CHANNEL_NOTIFY, "Shimeji notifications", NotificationManager.IMPORTANCE_LOW)
+        channel.enableLights(false)
+        channel.enableVibration(false)
+        channel.setShowBadge(false)
+        mNotificationManager.createNotificationChannel(channel)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        startForeground(1, createNotification())
-
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
-        // Lấy kích thước màn hình để tính toán biên giới
-        updateScreenSize()
-
-        setupPetView()
-    }
-
-    private fun updateScreenSize() {
-        val metrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(metrics)
-        screenWidth = metrics.widthPixels
-        screenHeight = metrics.heightPixels
-    }
-
-    private fun setupPetView() {
-        petView = LayoutInflater.from(this).inflate(R.layout.layout_pet, null)
-        imgPet = petView.findViewById(R.id.imgPet)
-
-        params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
-        )
-
-        params.gravity = Gravity.TOP or Gravity.START
-        params.x = screenWidth / 2 - 100
-        params.y = screenHeight / 2
-
-        windowManager.addView(petView, params)
-
-        setupTouchListener()
-
-        // Bắt đầu vòng lặp sự sống của Pet (Game Loop)
-        handler.post(gameLoopRunnable)
-    }
-
-    // --- GAME LOOP: Xử lý Logic mỗi khung hình (60 FPS) ---
-    private val gameLoopRunnable = object : Runnable {
-        override fun run() {
-            if (!isDragging) {
-                updatePhysics() // Xử lý trọng lực
-                updateAI()      // Xử lý hành vi di chuyển
-                updateAnimation() // Cập nhật hình ảnh (Animation)
-            }
-            handler.postDelayed(this, 16)
-        }
-    }
-
-    // --- CẬP NHẬT HÌNH ẢNH (ANIMATION) ---
-    private fun updateAnimation() {
-        // Chỉ cập nhật khi trạng thái thay đổi để tránh load lại ảnh liên tục gây giật
-        if (actionState == lastActionState) return
-        lastActionState = actionState
-
-        // Reset scale mặc định
-        imgPet.scaleX = 1f
-
-        when (actionState) {
-            STATE_WALK_LEFT -> {
-                imgPet.scaleX = -1f // Lật hình
-                // setPetAnimation(R.drawable.anim_walk) // Thay bằng file xml animation của bạn
-                imgPet.setImageResource(R.drawable.sonix_left) // Demo tạm
-            }
-            STATE_WALK_RIGHT -> {
-                // setPetAnimation(R.drawable.anim_walk)
-                imgPet.setImageResource(R.drawable.sonix_right) // Demo tạm
-            }
-            STATE_RUN_LEFT -> {
-                imgPet.scaleX = -1f
-                // setPetAnimation(R.drawable.anim_run) // Chạy nhanh
-                imgPet.setImageResource(R.drawable.sonix_chay_trai) // Demo tạm
-            }
-            STATE_RUN_RIGHT -> {
-                // setPetAnimation(R.drawable.anim_run)
-                imgPet.setImageResource(R.drawable.sonix_chay_phai) // Demo tạm
-            }
-            STATE_FLY -> {
-                // setPetAnimation(R.drawable.anim_fly) // Bay
-                imgPet.setImageResource(R.drawable.sonix_bay) // Demo tạm
-            }
-            STATE_FALLING -> {
-                imgPet.setImageResource(R.drawable.sonix_ngoi) // Demo rơi
-            }
-            STATE_IDLE -> {
-                // setPetAnimation(R.drawable.anim_idle) // Đứng thở
-                imgPet.setImageResource(R.drawable.sonix_dung) // Demo đứng yên
-            }
-        }
-    }
-
-    /**
-     * Hàm hỗ trợ chạy AnimationDrawable (Frame Animation)
-     * Cách dùng: Tạo file res/drawable/anim_walk.xml chứa danh sách các frame
-     */
-    private fun setPetAnimation(resourceId: Int) {
-        imgPet.setBackgroundResource(resourceId)
-        val frameAnimation = imgPet.background as? AnimationDrawable
-        frameAnimation?.start()
-    }
-
-    private fun updatePhysics() {
-        // Nếu đang BAY thì bỏ qua trọng lực
-        if (actionState == STATE_FLY) return
-
-        // 1. Xử lý Trọng lực (Gravity)
-        val floorY = screenHeight - (petView.height + FLOOR_OFFSET)
-
-        if (params.y < floorY) {
-            params.y += GRAVITY_SPEED
-
-            // Nếu không phải đang bay mà lơ lửng -> Rơi
-            if (actionState != STATE_FLY) {
-                actionState = STATE_FALLING
-            }
-
-            if (params.y > floorY) {
-                params.y = floorY
-                actionState = STATE_IDLE // Chạm đất
-            }
-            windowManager.updateViewLayout(petView, params)
-        } else {
-            if (actionState == STATE_FALLING) actionState = STATE_IDLE
-        }
-    }
-
-    private fun updateAI() {
-        if (actionState == STATE_FALLING) return
-
-        // 2. Bộ não AI: Quyết định hành động
-        if (timeToNextAction <= 0) {
-            pickRandomAction()
-        } else {
-            timeToNextAction--
-        }
-
-        // 3. Thực hiện di chuyển
-        when (actionState) {
-            STATE_WALK_LEFT -> moveHorizontal(-WALK_SPEED)
-            STATE_WALK_RIGHT -> moveHorizontal(WALK_SPEED)
-            STATE_RUN_LEFT -> moveHorizontal(-RUN_SPEED)
-            STATE_RUN_RIGHT -> moveHorizontal(RUN_SPEED)
-            STATE_FLY -> moveFlying() // Logic bay riêng
-            STATE_IDLE -> { /* Đứng yên */ }
-        }
-    }
-
-    private fun moveHorizontal(speed: Int) {
-        params.x += speed
-
-        // Va chạm tường
-        if (params.x < 0) {
-            params.x = 0
-            pickRandomAction() // Đụng tường thì đổi hành động ngay
-        } else if (params.x > screenWidth - petView.width) {
-            params.x = screenWidth - petView.width
-            pickRandomAction()
-        }
-        windowManager.updateViewLayout(petView, params)
-    }
-
-    private fun moveFlying() {
-        // Bay lượn ngẫu nhiên theo hình sin hoặc zig zac
-        params.x += if (Random.nextBoolean()) FLY_SPEED else -FLY_SPEED
-        params.y -= FLY_SPEED / 2 // Bay hơi hướng lên trên
-
-        // Giới hạn trần nhà (không bay mất hút lên trên)
-        if (params.y < 100) {
-            params.y = 100
-            actionState = STATE_FALLING // Bay cao quá thì mỏi cánh rơi xuống
-        }
-        // Giới hạn tường
-        if (params.x < 0 || params.x > screenWidth - petView.width) {
-            params.x = if (params.x < 0) 0 else screenWidth - petView.width
-        }
-
-        windowManager.updateViewLayout(petView, params)
-    }
-
-    private fun pickRandomAction() {
-        // Random hành động phức tạp hơn
-        val rand = Random.nextInt(100)
-        actionState = when {
-            rand < 40 -> STATE_IDLE         // 40% đứng chơi
-            rand < 65 -> STATE_WALK_LEFT    // 25% đi bộ
-            rand < 90 -> STATE_WALK_RIGHT
-            rand < 95 -> if (Random.nextBoolean()) STATE_RUN_LEFT else STATE_RUN_RIGHT // 5% chạy nhanh
-            else -> STATE_FLY               // 5% bay lên
-        }
-
-        // Random thời gian thực hiện (60 frames ~ 1s)
-        timeToNextAction = Random.nextInt(60, 200)
-    }
-
-    private fun setupTouchListener() {
-        petView.setOnTouchListener { view, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    isDragging = true
-                    actionState = STATE_DRAGGING
-                    // Reset animation
-                    imgPet.setImageResource(R.drawable.sonix_keo) // Demo icon khi bị tóm
-
-                    initialX = params.x
-                    initialY = params.y
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    updateScreenSize()
-                    return@setOnTouchListener true
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        try {
+            for (view in shimejiViews) {
+                if (!view.isHidden) {
+                    view.notifyLayoutChange(this)
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = initialX + (event.rawX - initialTouchX).toInt()
-                    params.y = initialY + (event.rawY - initialTouchY).toInt()
-                    windowManager.updateViewLayout(petView, params)
-                    return@setOnTouchListener true
-                }
-                MotionEvent.ACTION_UP -> {
-                    isDragging = false
-                    actionState = STATE_FALLING
-                    lastActionState = -1 // Reset để cập nhật lại animation rơi ngay lập tức
-                    return@setOnTouchListener true
-                }
-                else -> return@setOnTouchListener false
             }
+        } catch (e: Throwable) {
+
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        handler.removeCallbacks(gameLoopRunnable)
-        if (::petView.isInitialized) {
-            windowManager.removeView(petView)
-        }
-    }
-
-    private fun createNotification(): Notification {
-        val channelId = "ShimejiChannel"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Shimeji Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        return NotificationCompat.Builder(this, channelId)
-            .setContentTitle(getString(R.string.pet_notification_title))
-            .setContentText(getString(R.string.pet_notification_text))
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .build()
+    companion object {
+        const val TAG = "ShimejiService"
+        const val ACTION_TOGGLE = "com.redbox.shimeji.live.shimejilife.TOGGLE_SHIMEJI"
+        const val CHANNEL_NOTIFY = "shimeji_channel"
     }
 }
