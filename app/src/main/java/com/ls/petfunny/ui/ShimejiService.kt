@@ -19,9 +19,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Message
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
@@ -33,10 +35,18 @@ import com.ls.petfunny.ui.custom.ShimejiView
 import com.ls.petfunny.utils.AppConstants
 import com.ls.petfunny.utils.AppLogger
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ShimejiService : Service() {
+class ShimejiService : Service(), Choreographer.FrameCallback {
+
+    private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
 
     @Inject
     lateinit var helper: Helper
@@ -76,7 +86,7 @@ class ShimejiService : Service() {
         }
     }
 
-    internal val shimejiViews = ArrayList<ShimejiView>(12)
+    internal val shimejiViews = ArrayList<ShimejiView >(12)
 
     private val viewParams = HashMap<Int, LayoutParams>(12)
 
@@ -114,20 +124,11 @@ class ShimejiService : Service() {
         }
     }
 
-    internal var handler: Handler = Handler()
-
     override fun onCreate() {
         super.onCreate()
         AppLogger.d("", "HIHI ${TAG} --->onCreate ShimejiService")
         try {
             mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-            handler = Handler(Handler.Callback {
-                try {
-                    onHandleMessage(it)
-                } catch (e: Exception) {
-                    return@Callback false
-                }
-            })
             prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -174,12 +175,14 @@ class ShimejiService : Service() {
             }
         }
         if (isShimejiVisible) {
-            handler.sendEmptyMessage(1)
+            startFrameLoop()
+        } else {
+            stopFrameLoop()
         }
     }
 
     fun add(mascotView: ShimejiView) {
-        handler.sendEmptyMessage(1)
+        startFrameLoop()
         mascotView.resumeAnimation()
     }
 
@@ -193,19 +196,22 @@ class ShimejiService : Service() {
     }
 
     fun loadMascotViews() {
-        try {
-            lateinit var params: LayoutParams
+        serviceScope.launch {
             val mascots: List<Int> = helper.getActiveTeamMembers()
-            AppLogger.e("${TAG} ---> Loading list mascots active: %s", mascots)
-            spritesService.loadSpritesForMascots(mascots)
+            withContext(Dispatchers.IO) {
+                AppLogger.e("${TAG} ---> Loading list mascots active: %s", mascots)
+                spritesService.loadSpritesForMascots(mascots)
+            }
+            lateinit var params: LayoutParams
             AppLogger.e("${TAG} ---> Start loop add mascots to screen")
             loop@ for (intValue in mascots) {
                 AppLogger.e("${TAG} ---> Start loop add mascots to screen 222222 intvalue: $intValue")
                 if (intValue != -1) {
-                    val spritesById: Sprites = spritesService.getSpritesById(intValue)
+                    val spritesById: Sprites? = spritesService.getSpritesById(intValue)
                     if (spritesById == null || spritesById.isEmpty()) {
                         AppLogger.e("${TAG} ---> Frames for mascot $intValue were empty. Skipping")
                     } else {
+                        AppLogger.e("${TAG} ---> Start add mascost View sprite from cache")
                         params = LayoutParams(
                             LayoutParams.WRAP_CONTENT,
                             LayoutParams.WRAP_CONTENT,
@@ -215,10 +221,13 @@ class ShimejiService : Service() {
                         )
 
                         params.gravity = Gravity.START or Gravity.TOP
+                        params.width = spritesById.width
+                        params.height = spritesById.height
                         var view: ShimejiView?
-
-                        view = ShimejiView(this)
-                        view.setupMascot(intValue, true, true)
+                        view = ShimejiView(this@ShimejiService)
+                        view.width1 = spritesById.width
+                        view.height1 = spritesById.height
+                        view.setupMascot(intValue, true, true,spritesService,helper)
                         view.setMascotEventsListener(object : ShimejiView.MascotEventNotifier {
                             override fun hideMascot() {
                                 this@ShimejiService.remove(view)
@@ -228,28 +237,22 @@ class ShimejiService : Service() {
                                 this@ShimejiService.add(view)
                             }
                         })
-                        view.let { this.shimejiViews.add(it) }
-                        params.width = view.width1
-                        params.height = (view.height1 ?: return)
-
+                        view.let { this@ShimejiService.shimejiViews.add(it) }
                         viewParams[view.getUniqueId().toInt()] = params
+                        AppLogger.e("${TAG} ---> prepare add mascots view w = " + view.width + ",h = " + view.height)
                         mWindowManager.addView(view, params)
-                        AppLogger.e("${TAG} ---> add mascots to screen: list mascots: ${intValue}")
+                        AppLogger.e("${TAG} ---> add mascots to screen mascots: ${intValue}")
                     }
 
                 }
             }
-            handler.sendEmptyMessage(1)
-
-
-        } catch (e: Throwable) {
-            AppLogger.e(e.message)
+            startFrameLoop()
         }
     }
 
     internal fun removeMascotViews() {
         AppLogger.d("", "HIHI ${TAG} ---> remove all MascotViews")
-        handler.removeMessages(1)
+        stopFrameLoop()
         for (view in shimejiViews) {
             if (view.isShown) {
                 view.pauseAnimation()
@@ -260,52 +263,43 @@ class ShimejiService : Service() {
         viewParams.clear()
     }
 
-    private fun onHandleMessage(msg: Message): Boolean {
-        if (msg.what != 1) {
-            return false
-        }
-        this.handler.removeMessages(1)
+    private fun startFrameLoop() {
+        Choreographer.getInstance().removeFrameCallback(this)
+        Choreographer.getInstance().postFrameCallback(this)
+
+    }
+
+    private fun stopFrameLoop() {
+        Choreographer.getInstance().removeFrameCallback(this)
+    }
+
+    override fun doFrame(p0: Long) {
+        if (!isShimejiVisible || shimejiViews.isEmpty()) return
         shimejiViews.forEach { view ->
-            if (view.isAttachedToWindow) {
-                if (!view.isHidden && view.isVisible) {
+            if (view.isAttachedToWindow && !view.isHidden && view.isVisible) {
+                val params = viewParams[view.getUniqueId().toInt()]
+                if (params != null) {
                     try {
-                        //isAttachedToWindow
-                        val paramsShimeji = viewParams[view.getUniqueId().toInt()]
-                        if (view.parent == null) {
-                            try {
-                                mWindowManager.addView(view, paramsShimeji)
-                                view.isHidden = false
-                            } catch (e: Exception) {
-                                AppLogger.e(e.message)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        AppLogger.e(e.message)
-                    }
-                }
-                if (view.isVisible && view.height1 != null) {
-                    val params = viewParams[view.getUniqueId().toInt()]
-                    if (params != null) {
-                        try {
-                            params.height = view.height1!!
+                        // Chỉ update nếu tọa độ có thay đổi thật sự để đỡ tốn CPU
+                        if (params.x != view.x.toInt() || params.y != view.y.toInt() || params.height != view.height1) {
+                            params.height = view.height1
                             params.width = view.width1
                             params.x = view.x.toInt()
                             params.y = view.y.toInt()
                             mWindowManager.updateViewLayout(view, params)
-                        } catch (e: Exception) {
-                            AppLogger.e(e.message)
                         }
-                    }
+                    } catch (e: Exception) { AppLogger.e(e.message) }
                 }
             }
         }
-        handler.sendEmptyMessageDelayed(1, 16)
-        return true
+        Choreographer.getInstance().postFrameCallback(this)
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
+        stopFrameLoop()
         try {
             AppLogger.d("HIHI ${TAG} --> onDestroy")
             prefs?.unregisterOnSharedPreferenceChangeListener(this.prefListener)
@@ -317,22 +311,13 @@ class ShimejiService : Service() {
     }
 
     internal fun onScreenOff() {
-        handler.removeMessages(1)
-        for (v in this.shimejiViews) {
-            if (!v.isHidden) {
-                v.pauseAnimation()
-            }
-        }
+        stopFrameLoop()
+        shimejiViews.filter { !it.isHidden }.forEach { it.pauseAnimation() }
     }
 
     internal fun onScreenOn() {
-        handler.removeMessages(1)
-        for (v in this.shimejiViews) {
-            if (!v.isHidden) {
-                v.resumeAnimation()
-            }
-        }
-        handler.sendEmptyMessage(1)
+        shimejiViews.filter { !it.isHidden }.forEach { it.resumeAnimation() }
+        startFrameLoop()
     }
 
     internal fun setForegroundNotification(start: Boolean, islockscreen: Boolean = false) {
@@ -420,6 +405,8 @@ class ShimejiService : Service() {
 
         }
     }
+
+
 
     companion object {
         const val TAG = "ShimejiService"

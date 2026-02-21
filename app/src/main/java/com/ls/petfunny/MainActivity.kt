@@ -1,10 +1,12 @@
 package com.ls.petfunny
 
+import android.R.attr.visibility
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -36,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private val shimejiAdapter by lazy {
         ShimejiAdapter { shimejiGif ->
-            viewModel.downloadShimeji(shimejiGif)
+            viewModel.downloadShimejiV2(shimejiGif)
         }
     }
 
@@ -65,6 +67,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpObserver() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 1. Lắng nghe trạng thái Loading
+                launch {
+                    viewModel.isLoading.collect { isLoading ->
+                        if (isLoading) {
+                            // Hiện Loading (Có thể dùng ProgressBar hoặc Dialog tùy UI của bạn)
+                            binding.loadingView.visibility = View.VISIBLE
+                        } else {
+                            // Ẩn Loading
+                            binding.loadingView.visibility = View.GONE
+                        }
+                    }
+                }
+
+                // 2. Lắng nghe sự kiện Toast (Chỉ phát 1 lần)
+                launch {
+                    viewModel.toastEvent.collect { message ->
+                        Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
         lifecycleScope.launch {
             // Chỉ thu thập dữ liệu khi Activity ở trạng thái STARTED hoặc RESUMED
             // Tự động dừng khi Activity vào Background (STOPPED)

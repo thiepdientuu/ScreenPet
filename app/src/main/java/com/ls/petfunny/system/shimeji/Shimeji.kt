@@ -1,5 +1,9 @@
 package com.ls.petfunny.system.shimeji
 
+import android.R.attr.animation
+import android.R.attr.height
+import android.R.attr.x
+import android.R.attr.y
 import android.graphics.Bitmap
 import com.ls.petfunny.data.model.Playground
 import com.ls.petfunny.data.model.Sprites
@@ -7,8 +11,17 @@ import com.ls.petfunny.system.shimeji.animations.Animation
 import com.ls.petfunny.system.shimeji.animations.Dragging
 import com.ls.petfunny.system.shimeji.animations.Falling
 import com.ls.petfunny.system.shimeji.animations.Flinging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable.isActive
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.concurrent.thread
+import kotlin.coroutines.cancellation.CancellationException
 
 class Shimeji(var shimejiId: Int, var paidenable: Boolean, var flinging: Boolean) {
     //@Volatile
@@ -26,7 +39,8 @@ class Shimeji(var shimejiId: Int, var paidenable: Boolean, var flinging: Boolean
         private set
     private lateinit var margins: Playground
     private var speedMultiplier = 0.0
-    private lateinit var thread: MascotThread
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var animationJob: Job? = null
 
     //private val touch = MotionAttributes()
     internal var width = 0
@@ -80,10 +94,20 @@ class Shimeji(var shimejiId: Int, var paidenable: Boolean, var flinging: Boolean
         get() = frames[animation.spriteIdentifier]
 
     fun startAnimation() {
-        thread = MascotThread()
-        if (thread.state == Thread.State.NEW) {
-            thread.start()
-        }
+            if (animationJob?.isActive == true) return
+            animationJob = scope.launch {
+                while (isActive) {
+                    try {
+                        updateAnimation()
+                        val delayMs = if (Animation.classicmode) 30L else 16L
+                        delay(delayMs) // Không block thread, cực kỳ tiết kiệm pin
+                    } catch (e: CancellationException) {
+                        break // Thoát vòng lặp an toàn khi bị cancel
+                    } catch (e: Exception) {
+                        Timber.e(e)
+                    }
+                }
+            }
     }
 
     //aqui se inicia y es donde se empieza a caer el shimeji hasta llegar a la parte mas baja de la pantalla
@@ -151,8 +175,7 @@ class Shimeji(var shimejiId: Int, var paidenable: Boolean, var flinging: Boolean
     }
 
     fun kill() {
-        thread.isRunning = false
-        thread.interrupt()
+        animationJob?.cancel()
     }
 
     private fun checkConditions() {
@@ -225,33 +248,6 @@ class Shimeji(var shimejiId: Int, var paidenable: Boolean, var flinging: Boolean
 
     private fun applyVelocityY(increment: Int) {
         y = dy + increment
-    }
-
-    /*@get:Contract(pure = true) //30
-    val animationDelay: Int
-        get() = 3*/
-
-    private inner class MascotThread() : Thread() {
-        //val random = kotlin.random.Random.nextLong(25,35)
-        //val random =  ThreadLocalRandom.current().nextLong(27, 35)
-        //kotlin.random.Random.nextLong(27,35)
-        //@Volatile
-        var isRunning = true
-        override fun run() {
-            while (isRunning) {
-                try {
-                    updateAnimation()
-                    if (Animation.classicmode) {
-                        sleep(30)
-                    } else {
-                        sleep(16)
-                    }
-                } catch (e: InterruptedException) {
-                    isRunning = false
-                }
-            }
-        }
-
     }
 }
 

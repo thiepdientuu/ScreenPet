@@ -49,7 +49,7 @@ abstract class MascotsDao {
             if (gardenPlanting != null) {
                 addMascotToDatabase(gardenPlanting)
             }
-            AppLogger.d("HIHI ---> Add mascot to database: id=%s name=%s frames=%s", mascotId, name, frames.size)
+            AppLogger.d("HIHI ShimejiService ---> Add mascot to database: id=%s name=%s frames=%s", mascotId, name, frames.size)
             for (i in frames.indices) {
                 val roomShimeji2 = helper.bitmapToByteArray(frames[i])?.let {
                     RoomShimeji(
@@ -63,7 +63,7 @@ abstract class MascotsDao {
                     addShimejiToDatabase(roomShimeji2)
                 }
             }
-            AppLogger.d("HIHI ---> Add frame to database done for mascot id=$mascotId, frame size: ${frames.size}")
+            AppLogger.d("HIHI ShimejiService ---> Add frame to database done for mascot id=$mascotId, frame size: ${frames.size}")
         } catch (e: Exception) {
             AppLogger.e(e.message.toString())
         }

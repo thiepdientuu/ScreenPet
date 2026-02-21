@@ -18,7 +18,18 @@ import com.ls.petfunny.data.model.Playground
 import com.ls.petfunny.di.repository.Helper
 import com.ls.petfunny.di.repository.SpritesService
 import com.ls.petfunny.system.shimeji.Shimeji
+import com.ls.petfunny.ui.ShimejiService.Companion.TAG
+import com.ls.petfunny.utils.AppLogger
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable.isActive
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Dispatcher
 import timber.log.Timber
 import java.util.Timer
 import java.util.TimerTask
@@ -27,14 +38,15 @@ import javax.inject.Inject
 import kotlin.concurrent.timerTask
 
 
-@AndroidEntryPoint
 class ShimejiView(context: Context) :
     SurfaceView(context), SurfaceHolder.Callback {
 
-    @Inject
-    lateinit var spritesService: SpritesService
-    @Inject
-    lateinit var helper: Helper
+    private lateinit var spritesService: SpritesService
+    private lateinit var helper: Helper
+
+    private val renderScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var renderJob: Job? = null
+
     var mascotId: Int = -1
     var isHidden = false
     var paidenable: Boolean = false
@@ -55,14 +67,6 @@ class ShimejiView(context: Context) :
     var timerTask: TimerTask? = null
     fun cancelReappearTimer() {
         timerTask?.cancel()
-    }
-
-    internal val drawRunner = Runnable {
-        try {
-            draw()
-        } catch (e: Exception) {
-            Timber.e(e)
-        }
     }
 
     //https://www.baeldung.com/kotlin-jvm-synthetic
@@ -148,7 +152,7 @@ class ShimejiView(context: Context) :
     }
 
     internal var handler1 = Handler()
-    var height1: Int? = null
+    var height1: Int = 128
     internal var id = NEXT_ID.getAndIncrement()
     internal var isVisible = true
     internal lateinit var shimeji: Shimeji
@@ -161,33 +165,36 @@ class ShimejiView(context: Context) :
     var speedMultipliers: Double = 0.0
 
     //internal val spritesService: SpritesService
-    var width1: Int = 0
+    var width1: Int = 128
 
-    fun setupMascot(id: Int, paid: Boolean, fling: Boolean) {
-        this.mascotId = id
-        this.paidenable = paid
-        this.flinging = fling
-        this.paint = Paint()
-        this.paint.isAntiAlias = true
+    suspend fun setupMascot(id: Int, paid: Boolean, fling: Boolean, spritesService : SpritesService,helper : Helper) = withContext(Dispatchers.Main){
+        AppLogger.e("${TAG} ---> setup mascot view w = ${width1} , h = ${height1}")
+        this@ShimejiView.spritesService = spritesService
+        this@ShimejiView.helper = helper
+        this@ShimejiView.mascotId = id
+        this@ShimejiView.paidenable = paid
+        this@ShimejiView.flinging = fling
+        this@ShimejiView.paint = Paint()
+        this@ShimejiView.paint.isAntiAlias = true
         setBackgroundColor(0)
         setZOrderOnTop(true)
-        speedMultipliers = helper.getSpeedMultiplier(this.context)
-        spritesService.setSizeMultiplier(this.sizeMultiplier, mascotId)
-        val frames = this.spritesService.getSpritesById(mascotId)
-        this.height1 = frames.height
-        this.width1 = frames.width
-        this.shimeji = Shimeji(mascotId, paidenable, flinging)
-        this.playground = Playground(this.context, false)
-        this.shimeji.initialize(frames, this.speedMultipliers, this.playground)
-        this.shimeji.startAnimation()
+        speedMultipliers = helper.getSpeedMultiplier(this@ShimejiView.context)
+        // spritesService.setSizeMultiplier(this@ShimejiView.sizeMultiplier, mascotId)
+        val frames = this@ShimejiView.spritesService.getSpritesById(mascotId)
+       // this@ShimejiView.height1 = frames.height
+       // this@ShimejiView.width1 = frames.width
+        this@ShimejiView.shimeji = Shimeji(mascotId, paidenable, flinging)
+        this@ShimejiView.playground = Playground(this@ShimejiView.context, false)
+        this@ShimejiView.shimeji.initialize(frames, this@ShimejiView.speedMultipliers, this@ShimejiView.playground)
+        this@ShimejiView.shimeji.startAnimation()
         holder.setFormat(PixelFormat.TRANSPARENT)
-        holder.addCallback(this)
-        this.gestureDetector = GestureDetector(this.context, this.gestureListener)
-        this.scroller = Scroller(this.context)
+        holder.addCallback(this@ShimejiView)
+        this@ShimejiView.gestureDetector = GestureDetector(this@ShimejiView.context, this@ShimejiView.gestureListener)
+        this@ShimejiView.scroller = Scroller(this@ShimejiView.context)
         if (Looper.myLooper() == null) {
             Looper.prepare()
         }
-
+        AppLogger.e("${TAG} ---> setup mascot view w = ${width1} , h = ${height1}")
     }
 
     fun pauseAnimation() {
@@ -240,7 +247,12 @@ class ShimejiView(context: Context) :
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         try {
-            this.handler1.post(this.drawRunner)
+            renderJob = renderScope.launch {
+                while (isActive) {
+                    if (isVisible) drawMascot()
+                    delay(16) // ~60fps rendering
+                }
+            }
         } catch (e: Exception) {
         }
     }
@@ -251,14 +263,35 @@ class ShimejiView(context: Context) :
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        try {
-            this.handler1.removeCallbacks(this.drawRunner)
-        } catch (e: Exception) {
-        }
+        renderJob?.cancel()
     }
 
     fun getUniqueId(): Long {
         return id
+    }
+
+    private fun drawMascot() {
+        if (!this.isVisible) return
+        val canvas = holder.lockCanvas() ?: return
+        try {
+            canvas.drawColor(0, Mode.CLEAR)
+            val mascotBitmap = shimeji.frameBitmap ?: return
+
+            height1 = mascotBitmap.height
+            width1 = mascotBitmap.width
+
+            if (shimeji.isFacingLeft) {
+                canvas.drawBitmap(mascotBitmap, 0.0f, 0.0f, paint)
+            } else {
+                flipHorizontalMatrix.setScale(-1.0f, 1.0f)
+                flipHorizontalMatrix.postTranslate(width1.toFloat(), 0.0f)
+                canvas.drawBitmap(mascotBitmap, flipHorizontalMatrix, paint)
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+        } finally {
+            holder.unlockCanvasAndPost(canvas)
+        }
     }
 
     fun draw() {
@@ -280,8 +313,6 @@ class ShimejiView(context: Context) :
                 holder.unlockCanvasAndPost(canvas)
             }
         }
-        this.handler1.removeCallbacks(this.drawRunner)
-        this.handler1.postDelayed(this.drawRunner, 16)
     }
 
     // sirve para desabilitar el touch o el drag del shimeji y activar otros eventos
