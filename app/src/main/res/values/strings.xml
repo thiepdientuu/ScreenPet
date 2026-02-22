@@ -524,4 +524,5 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="changename">Change Name SV</string>
     <string name="changeavatarserver">Change Icon</string>
     <string name="serverarchived">Server Archived</string>
+    <string name="enable_begin">Enable to begin</string>
 </resources>

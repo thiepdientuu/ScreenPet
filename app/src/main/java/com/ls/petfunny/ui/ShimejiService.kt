@@ -16,14 +16,11 @@ import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Message
 import android.view.Choreographer
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
@@ -200,6 +197,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
             val mascots: List<Int> = helper.getActiveTeamMembers()
             withContext(Dispatchers.IO) {
                 AppLogger.e("${TAG} ---> Loading list mascots active: %s", mascots)
+                spritesService.setSizeMultiplier(2.0)
                 spritesService.loadSpritesForMascots(mascots)
             }
             lateinit var params: LayoutParams

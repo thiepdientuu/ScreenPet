@@ -2,7 +2,6 @@ package com.ls.petfunny
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -13,9 +12,7 @@ import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.ls.petfunny.databinding.ActivitySplashBinding
 import com.ls.petfunny.ui.ads.AdManager
-import com.ls.petfunny.ui.intro.IntroFragment
 import com.ls.petfunny.utils.AppLogger
-import com.ls.petfunny.utils.setSafeOnClickListener
 import com.tp.ads.utils.AdCommonUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -69,10 +66,6 @@ class SplashActivity : AppCompatActivity() {
             AppLogger.d("HIHI ---> initMobileAdSuccess")
             loadBannerAd()
             startCountDownTimer()
-            lifecycleScope.launch {
-                delay(2000)
-                loadNativeIntro()
-            }
         })
     }
 
@@ -102,15 +95,16 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun handleFinishShowInterSplash() {
-        binding.containerIntro.visibility = View.VISIBLE
-        binding.containerIntro.setSafeOnClickListener {  }
-        addFragment(
-            IntroFragment.newInstances(
-                getString(R.string.msg_tittle_intro1),
-                getString(R.string.msg_msg_intro1),
-                IntroFragment.TYPE_INTRO_1
-            )
-        )
+        gotoHome()
+//        binding.containerIntro.visibility = View.VISIBLE
+//        binding.containerIntro.setSafeOnClickListener {  }
+//        addFragment(
+//            IntroFragment.newInstances(
+//                getString(R.string.msg_tittle_intro1),
+//                getString(R.string.msg_msg_intro1),
+//                IntroFragment.TYPE_INTRO_1
+//            )
+//        )
     }
 
     fun addFragment(fragment : Fragment){

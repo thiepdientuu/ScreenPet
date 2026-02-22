@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation (platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
     implementation (libs.firebase.config)
     implementation (libs.firebase.common)
     implementation (libs.androidx.fragment.ktx)
