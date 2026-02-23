@@ -525,4 +525,7 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="changeavatarserver">Change Icon</string>
     <string name="serverarchived">Server Archived</string>
     <string name="enable_begin">Enable to begin</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_pet">Pets</string>
+    <string name="menu_setting">Setting</string>
 </resources>
