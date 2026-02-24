@@ -89,15 +89,6 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
                 }
             }
         }
-
-        // Tư duy Senior: Thu thập Flow một cách an toàn
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mascotUiState.collect { list ->
-                    AppLogger.d("HIHI ---> Flow nhận dữ liệu mới: ${list.size} items")
-                }
-            }
-        }
     }
 
     private fun setUpListPet() {
