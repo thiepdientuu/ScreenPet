@@ -93,4 +93,13 @@ object AllEvents {
     const val INVITE_X = "xxx_invite_view"
     const val INVITE_X_ACCEPT = "xxx_invite_accept"
     const val INVITE_X_DENY = "xxx_invite_deny"
+
+    // service
+    const val SERVICE_START = "service_start"
+    const val SERVICE_STOP = "service_destroy"
+
+    // performance API
+    const val LOAD_PET = "api_load_pest_"
+    const val DOWN_PET = "api_down_pest_"
+
 }

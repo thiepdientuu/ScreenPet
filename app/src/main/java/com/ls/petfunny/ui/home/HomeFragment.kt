@@ -66,6 +66,10 @@ class HomeFragment : BaseFragment<FragHomeBinding, HomeViewModel>() {
     private fun setUpView() {
         binding.switchEnable.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
+                if (activeMascotAdapter.itemCount == 0) {
+                    showToast(getString(R.string.need_down_pet))
+                    (activity as? MainActivity)?.gotoPetStore()
+                }
                 (activity as? MainActivity)?.startShimeijService()
             } else {
                 (activity as? MainActivity)?.stopShimejiService()

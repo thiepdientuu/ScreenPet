@@ -62,9 +62,11 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
                         if (isLoading) {
                             // Hiện Loading (Có thể dùng ProgressBar hoặc Dialog tùy UI của bạn)
                             binding.loadingView.visibility = View.VISIBLE
+                            binding.tvDownloadingPet.visibility = View.VISIBLE
                         } else {
                             // Ẩn Loading
                             binding.loadingView.visibility = View.GONE
+                            binding.tvDownloadingPet.visibility = View.GONE
                         }
                     }
                 }

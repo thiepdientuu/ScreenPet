@@ -123,6 +123,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun gotoPetStore(){
+        binding.bottomNav.selectedItemId = R.id.nav_pet
+    }
+
     // Yêu cầu quyền vẽ đè
     fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

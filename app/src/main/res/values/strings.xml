@@ -445,6 +445,7 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="getWallpaper">Get Wallpaper</string>
     <string name="setWallpaper">Set Wallpaper</string>
     <string name="doubletap">Double tap hides Akimeji for:</string>
+    <string name="tip">🖕 Double-click on the pet on the screen to hide it.</string>
     <string name="setminutes">Set Minutes</string>
     <string name="despues2">After</string>
     <string name="despues">After 1 month</string>
@@ -491,7 +492,8 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="remove_from_bookmarks_qm">Remove from favorites?</string>
     <string name="About_string">About</string>
     <string name="large_image_warning">Large images may take longer to load on slow connections.</string>
-    <string name="download">Download</string>
+    <string name="downloading_pet">Downloading Pet</string>
+    <string name="need_down_pet">Download a pet and add it to your screen</string>
     <string name="view_original">view original resolution</string>
     <string name="add_to_bookmark">Add to favorite</string>
     <string name="curated">New</string>
@@ -528,4 +530,5 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="menu_home">Home</string>
     <string name="menu_pet">Pets</string>
     <string name="menu_setting">Setting</string>
+    <string name="currentPestActive">Pest Downloaded</string>
 </resources>

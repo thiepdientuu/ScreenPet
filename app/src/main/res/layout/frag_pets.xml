@@ -22,10 +22,22 @@
             android:id="@+id/loadingView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tvDownloadingPet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:text="@string/downloading_pet"
+            app:layout_constraintEnd_toEndOf="@+id/rvPet"
+            app:layout_constraintStart_toStartOf="@+id/rvPet"
+            app:layout_constraintTop_toBottomOf="@id/loadingView" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 

@@ -29,8 +29,10 @@ import com.ls.petfunny.data.model.Sprites
 import com.ls.petfunny.di.repository.Helper
 import com.ls.petfunny.di.repository.SpritesService
 import com.ls.petfunny.ui.custom.ShimejiView
+import com.ls.petfunny.utils.AllEvents
 import com.ls.petfunny.utils.AppConstants
 import com.ls.petfunny.utils.AppLogger
+import com.ls.petfunny.utils.TrackingHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -125,6 +127,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
         super.onCreate()
         AppLogger.d("", "HIHI ${TAG} --->onCreate ShimejiService")
         try {
+            TrackingHelper.logEvent(AllEvents.SERVICE_START)
             mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager
             prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
         } catch (e: Exception) {
@@ -296,6 +299,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
 
     override fun onDestroy() {
         super.onDestroy()
+        TrackingHelper.logEvent(AllEvents.SERVICE_STOP)
         serviceScope.cancel()
         stopFrameLoop()
         try {
