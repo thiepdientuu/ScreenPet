@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.ls.petfunny.MainApp
 import com.ls.petfunny.R
 import com.ls.petfunny.data.model.ShimejiGif
 import com.ls.petfunny.databinding.ItemShimejiBinding
@@ -34,6 +35,11 @@ class ShimejiAdapter(private val onItemClick: (ShimejiGif) -> Unit) :
 
         fun bind(item: ShimejiGif) {
             binding.tvName.text = item.name ?: item.nick ?: "Unknown"
+            if (item.downloaded) {
+                binding.btnAction.text = MainApp.instances.getString(R.string.addToScreen)
+            } else {
+                binding.btnAction.text = MainApp.instances.getString(R.string.download)
+            }
             currentItem = item
             // Sử dụng Glide để load ảnh/gif
             Glide.with(itemView.context)

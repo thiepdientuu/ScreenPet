@@ -12,7 +12,7 @@ class SpritesService @Inject constructor(
     private val helper: Helper, private val db: ShimejiRepository
 ) {
     var cachedSprites = ConcurrentHashMap<Int, Sprites>(100)
-    private var currentSizeMultiplier: Double = 2.0
+    private var currentSizeMultiplier: Double = 0.5
     suspend fun setSizeMultiplier(multiplier: Double) = withContext(Dispatchers.IO) {
         if (multiplier != currentSizeMultiplier) {
             currentSizeMultiplier = multiplier

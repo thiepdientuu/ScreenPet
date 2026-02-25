@@ -14,6 +14,7 @@ import com.ls.petfunny.databinding.ActivitySplashBinding
 import com.ls.petfunny.ui.ads.AdManager
 import com.ls.petfunny.utils.AppLogger
 import com.tp.ads.utils.AdCommonUtils
+import com.tp.ads.utils.AppSession
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,15 +70,11 @@ class SplashActivity : AppCompatActivity() {
         })
     }
 
-    private fun loadNativeIntro() {
-        adManager.loadNativeIntro1(AdCommonUtils.NATIVE_INTRO1_KEY)
-        adManager.loadNativeIntro2(AdCommonUtils.NATIVE_INTRO2_KEY)
-    }
 
     private fun startCountDownTimer(){
         lifecycleScope.launch {
             var count = 0
-            while (count < TIMEOUT_SPLASH && !adManager.interSplashLoadFail) {
+            while (count < TIMEOUT_SPLASH && !adManager.interSplashLoadFail && !AppSession.isVipUser) {
                 delay(1000)
                 count++
                 if (adManager.interSplash == null) {

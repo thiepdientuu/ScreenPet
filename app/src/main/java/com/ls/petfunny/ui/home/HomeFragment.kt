@@ -1,20 +1,19 @@
 package com.ls.petfunny.ui.home
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.ls.petfunny.MainActivity
 import com.ls.petfunny.R
 import com.ls.petfunny.base.BaseFragment
 import com.ls.petfunny.data.AppPreferencesHelper
 import com.ls.petfunny.databinding.FragHomeBinding
+import com.ls.petfunny.utils.AppConstants
 import com.ls.petfunny.utils.AppLogger
 import com.tp.ads.base.AdManager
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -31,20 +30,26 @@ class HomeFragment : BaseFragment<FragHomeBinding, HomeViewModel>() {
         }
     }
 
+    private var prefListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+
     @Inject
     lateinit var appPreferences: AppPreferencesHelper
 
     override fun getLayoutId() = R.layout.frag_home
 
     override fun observersSomething() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mascotUiState.collect { list ->
-                    AppLogger.d("HIHI ---> Home Flow nhận dữ liệu mới: ${list.size} items")
-                    activeMascotAdapter.submitList(list)
-                }
+        viewModel.mascotUiState.observe(viewLifecycleOwner) { list ->
+            AppLogger.d("HIHI ---> Home Flow nhận dữ liệu mới: ${list.size} items")
+            activeMascotAdapter.submitList(list)
+        }
+        prefListener = SharedPreferences.OnSharedPreferenceChangeListener { p0, p1 ->
+            AppLogger.d("HIHI ---> HomeFragment onSharedPreferenceChanged")
+            if (p1 == AppConstants.ACTIVE_SHIMEJI_IDS) {
+                (activity as? MainActivity)?.startShimeijService()
+                viewModel.loadActiveMascot()
             }
         }
+        context?.getSharedPreferences(AppConstants.MY_PREFS, Context.MODE_MULTI_PROCESS)?.registerOnSharedPreferenceChangeListener(prefListener)
     }
 
     override fun bindingAction() {
@@ -54,6 +59,12 @@ class HomeFragment : BaseFragment<FragHomeBinding, HomeViewModel>() {
     override fun viewCreated() {
         setUpView()
         setUpListPet()
+        viewModel.loadActiveMascot()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        context?.getSharedPreferences(AppConstants.MY_PREFS, Context.MODE_MULTI_PROCESS)?.unregisterOnSharedPreferenceChangeListener(prefListener)
     }
 
     private fun setUpListPet() {
@@ -66,10 +77,6 @@ class HomeFragment : BaseFragment<FragHomeBinding, HomeViewModel>() {
     private fun setUpView() {
         binding.switchEnable.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
-                if (activeMascotAdapter.itemCount == 0) {
-                    showToast(getString(R.string.need_down_pet))
-                    (activity as? MainActivity)?.gotoPetStore()
-                }
                 (activity as? MainActivity)?.startShimeijService()
             } else {
                 (activity as? MainActivity)?.stopShimejiService()

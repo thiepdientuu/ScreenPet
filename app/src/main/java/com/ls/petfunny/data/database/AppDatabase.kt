@@ -34,6 +34,12 @@ abstract class MascotsDao {
     @Query("SELECT * FROM mascots ORDER BY lastModifiedTime DESC")
     abstract fun getMascotsFlow(): Flow<List<Mascots>>
 
+    @Query("SELECT * FROM mascots ORDER BY lastModifiedTime DESC")
+    abstract suspend fun getMascotsSuspend(): List<Mascots>
+
+    @Query("SELECT * FROM mascots WHERE id IN (:idList) ORDER BY lastModifiedTime DESC")
+    abstract suspend fun getMascotsByIds(idList: List<Int>): List<Mascots>
+
     //antes de que los frames sean enviados deben convertirse a HelperT2.bitmapToByteArray(frames[i])
     @Insert(onConflict = OnConflictStrategy.ABORT)
     abstract fun addMascotToDatabase(mascots: Mascots /*mascotId: Int, name: String*/)

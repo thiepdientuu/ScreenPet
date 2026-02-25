@@ -91,19 +91,31 @@ class TeamListingService @Inject constructor(
                 listing.name!!,
                 frames
             )
-            activeMascot(listing.id)
         } catch (e: Exception) {
             AppLogger.e(e.message)
         }
     }
 
-    private fun activeMascot(id: Int) {
+    fun activeMascotReal(id: Int) {
         val current = helper.getActiveTeamMembers().toMutableList()
         if (!current.contains(id)) {
-            current.remove(id)
+            current.add(id)
         }
         helper.saveActiveTeamMembers(current)
     }
+
+    fun activeMascot(id: Int) {
+        val current = helper.getActiveTeamMembers().toMutableList()
+        if (current.contains(id)) {
+            current.remove(id)
+        } else {
+            current.add(id)
+        }
+        helper.saveActiveTeamMembers(current)
+    }
+
+    fun getActivePetId() = helper.getActiveTeamMembers()
+
 
     internal val mascotIDs: List<Int>
         get() {

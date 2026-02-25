@@ -89,7 +89,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
 
     private val viewParams = HashMap<Int, LayoutParams>(12)
 
-    private inner class PreferenceChangeListener() :
+    inner class PreferenceChangeListener() :
         SharedPreferences.OnSharedPreferenceChangeListener {
 
         override fun onSharedPreferenceChanged(prefs: SharedPreferences?, key: String?) {

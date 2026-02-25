@@ -8,6 +8,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import com.ls.petfunny.MainActivity
 import com.ls.petfunny.R
 import com.ls.petfunny.base.BaseFragment
 import com.ls.petfunny.data.AppPreferencesHelper
@@ -32,7 +33,12 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
 
     private val shimejiAdapter by lazy {
         ShimejiAdapter { shimejiGif ->
-            viewModel.downloadShimejiV2(shimejiGif)
+            if (shimejiGif.downloaded) {
+                viewModel.activeMascot(shimejiGif.id)
+                (activity as? MainActivity)?.gotoHome()
+            } else {
+                viewModel.downloadShimejiV2(shimejiGif)
+            }
         }
     }
 
@@ -62,11 +68,10 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
                         if (isLoading) {
                             // Hiện Loading (Có thể dùng ProgressBar hoặc Dialog tùy UI của bạn)
                             binding.loadingView.visibility = View.VISIBLE
-                            binding.tvDownloadingPet.visibility = View.VISIBLE
+
                         } else {
                             // Ẩn Loading
                             binding.loadingView.visibility = View.GONE
-                            binding.tvDownloadingPet.visibility = View.GONE
                         }
                     }
                 }
@@ -84,9 +89,10 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.topPackCharacters.collect { characters ->
                     if (characters.isNotEmpty()) {
+                        AppLogger.d("HIHI --> submit list Pet from API " + characters.size)
                         shimejiAdapter.submitList(characters)
                     } else {
-                        AppLogger.d("Danh sách nhân vật trống")
+                        AppLogger.d("HIHI ---> Danh sách nhân vật trống")
                     }
                 }
             }
@@ -96,7 +102,7 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
     private fun setUpListPet() {
         binding.rvPet.apply {
             // Hiển thị 4 cột như yêu cầu của bạn
-            layoutManager = GridLayoutManager(context, 4)
+            layoutManager = GridLayoutManager(context, 3)
             adapter = shimejiAdapter
             setHasFixedSize(true)
         }

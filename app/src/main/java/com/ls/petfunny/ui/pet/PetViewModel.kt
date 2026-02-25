@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.viewModelScope
 import com.ls.petfunny.R
 import com.ls.petfunny.base.BaseViewModel
-import com.ls.petfunny.data.model.Mascots
 import com.ls.petfunny.data.model.ShimejiGif
 import com.ls.petfunny.data.model.ShimejiListing
 import com.ls.petfunny.di.ApiService
@@ -19,12 +18,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -48,16 +44,10 @@ class PetViewModel @Inject constructor(
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent = _toastEvent.asSharedFlow()
 
-    val mascotUiState: StateFlow<List<Mascots>> = repository.getAllMascots()
-        .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+
 
     fun loadPack() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 AppLogger.d("HIHI --> loadPack called")
                 val response = apiService.getPacks()
@@ -67,10 +57,15 @@ class PetViewModel @Inject constructor(
                     if (!allPacks.isNullOrEmpty()) {
                         // Tư duy Senior: Tìm pack có size lớn nhất
                         val maxPack = allPacks.maxByOrNull { it.shimejigif.size }
-                        TrackingHelper.logEvent(AllEvents.LOAD_PET + "success" + maxPack)
+                        TrackingHelper.logEvent(AllEvents.LOAD_PET + "success_" + maxPack?.shimejigif?.size)
                         AppLogger.d("HIHI --> Pack lớn nhất là: ${maxPack?.title} với ${maxPack?.shimejigif?.size} nhân vật")
-
-                        // Cập nhật list shimeji của pack đó vào State
+                        val listMascots = repository.getAllMascotsSuspend()
+                        maxPack?.shimejigif?.forEach { shimejiGif ->
+                            if (listMascots.any { it.id == shimejiGif.id }) {
+                                shimejiGif.downloaded = true
+                                AppLogger.d("HIHI --> Shimeji đã download " + shimejiGif.name)
+                            }
+                        }
                         _topPackCharacters.value = maxPack?.shimejigif ?: emptyList()
                     }
                 } else {
@@ -142,6 +137,15 @@ class PetViewModel @Inject constructor(
 
                         // Lưu xuống DB (DB cũng là tác vụ IO)
                         withContext(Dispatchers.IO) {
+                            _topPackCharacters.update { currentList ->
+                                currentList.map { item ->
+                                    if (item.id == mascot.id) {
+                                        item.copy(downloaded = true)
+                                    } else {
+                                        item
+                                    }
+                                }
+                            }
                             teamListingService.addMascot(mascot, thumbnails)
                         }
                         TrackingHelper.logEvent(AllEvents.DOWN_PET + "success")
@@ -164,5 +168,9 @@ class PetViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun activeMascot(id : Int){
+        teamListingService.activeMascotReal(id)
     }
 }

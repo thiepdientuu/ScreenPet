@@ -18,6 +18,7 @@ data class ShimejiGif(
     @SerializedName("nick") val nick: String?,
     @SerializedName("shimejiGif") val shimejiGif: String?,
     @SerializedName("thumb") val thumb: String?,
-    @SerializedName("name") val name: String?
+    @SerializedName("name") val name: String?,
+    @SerializedName("downloaded") var downloaded: Boolean = false
 )
 

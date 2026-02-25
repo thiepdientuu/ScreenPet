@@ -14,4 +14,8 @@ class MascotsRepository @Inject constructor(
 
 
     fun getAllMascots(): Flow<List<Mascots>> = mascotsDao.getMascotsFlow()
+
+    suspend fun getAllMascotsSuspend(): List<Mascots> = mascotsDao.getMascotsSuspend()
+
+    suspend fun getMascotsByIds(idList: List<Int>): List<Mascots> = mascotsDao.getMascotsByIds(idList)
 }
