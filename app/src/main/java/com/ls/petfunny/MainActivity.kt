@@ -11,13 +11,11 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.gms.ads.AdError
 import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
 import com.ls.petfunny.ui.adapter.ShimejiAdapter
 import com.ls.petfunny.ui.adapter.ViewPagerAdapter
 import com.tp.ads.base.AdManager
-import com.tp.ads.base.AdsShowerListener
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -40,7 +38,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        adManager.loadInterAds()
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
         setupViewPager()
         setupBottomNavigation()
@@ -148,22 +145,6 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (checkOverlayPermission()) {
             startShimejiService()
-            adManager.showInterAds(this, object  : AdsShowerListener() {
-                override fun onAdDismissedFullScreenContent() {
-                    super.onAdDismissedFullScreenContent()
-                    startShimejiService()
-                }
-
-                override fun onShowAdsError() {
-                    super.onShowAdsError()
-                    startShimejiService()
-                }
-
-                override fun onAdFailedToShowFullScreenContent(p0: AdError) {
-                    super.onAdFailedToShowFullScreenContent(p0)
-                    startShimejiService()
-                }
-            })
         } else {
             Toast.makeText(this, getString(R.string.need_permision), Toast.LENGTH_SHORT).show()
         }
