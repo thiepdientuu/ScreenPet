@@ -533,4 +533,5 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="currentPestActive">Pest Active</string>
     <string name="download"> Download</string>
     <string name="addToScreen"> Active</string>
+    <string name="download_success"> Download success</string>
 </resources>

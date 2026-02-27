@@ -5,7 +5,6 @@ import android.app.Notification.PRIORITY_LOW
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -182,17 +181,36 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
     }
 
     fun add(mascotView: ShimejiView) {
-        startFrameLoop()
-        mascotView.resumeAnimation()
+        serviceScope.launch {
+            try {
+                startFrameLoop()
+                mascotView.resumeAnimation()
+            } catch (e: IllegalStateException) {
+                AppLogger.e(e.message)
+            } catch (e: Exception) {
+                AppLogger.e(e.message)
+            }
+        }
     }
 
 
     fun remove(mascotView: ShimejiView?) {
-        if (mascotView != null && mascotView.isShown) {
-            mascotView.pauseAnimation()
-            mascotView.isHidden = true
-            mWindowManager.removeViewImmediate(mascotView)
+        serviceScope.launch {
+            if (mascotView != null && mascotView.isShown) {
+                mascotView.pauseAnimation()
+                mascotView.isHidden = true
+                try {
+                    mWindowManager.removeViewImmediate(mascotView)
+                } catch (e: Exception) {
+                    AppLogger.e("Error removing view: ${e.message}")
+                }
+            }
         }
+//        if (mascotView != null && mascotView.isShown) {
+//            mascotView.pauseAnimation()
+//            mascotView.isHidden = true
+//            mWindowManager.removeViewImmediate(mascotView)
+//        }
     }
 
     fun loadMascotViews() {
@@ -324,32 +342,28 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
 
     internal fun setForegroundNotification(start: Boolean, islockscreen: Boolean = false) {
         if (helper.getNotificationVisibility(this)) {
-            //Title
-            var text: CharSequence = if (start) {
-                if (islockscreen) {
-                    getText(R.string.shimeji_notif_visible_lockscreen)
-                } else {
-                    getText(R.string.shimeji_notif_visible)
-                }
-            } else {
-                getText(R.string.shimeji_notif_hidden)
+            val text = getText(R.string.pet_notification_title)
+            val sub =  getText(R.string.pet_notification_text)
+
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            val sub = if (start) {
-                if (islockscreen) {
-                    getText(R.string.shimeji_notif_visible_lockscreen_subtitle)
-                } else {
-                    getText(R.string.shimeji_notif_disable)
-                }
+
+            val pendingIntent = if (launchIntent != null) {
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    launchIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
             } else {
-                getText(R.string.shimeji_notif_enable)
-            }
-            val intent =
                 PendingIntent.getService(
                     this,
                     0,
                     Intent(this, ShimejiService::class.java).setAction(ACTION_TOGGLE),
-                    FLAG_IMMUTABLE
+                    PendingIntent.FLAG_IMMUTABLE
                 )
+            }
             if (Build.VERSION.SDK_INT >= 26) {
                 setupNotificationChannel()
             }
@@ -366,7 +380,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
                 .setPriority(PRIORITY_LOW)
                 .setColor(getColor(R.color.purple_200))
                 .setLargeIcon(largeIcon)
-                .setOngoing(true).setContentIntent(intent)
+                .setOngoing(true).setContentIntent(pendingIntent)
                 .setSmallIcon(R.mipmap.ic_launcher)
             val notification = builder.build()
             if (start) {

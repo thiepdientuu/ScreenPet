@@ -37,7 +37,9 @@ class ShimejiAdapter(private val onItemClick: (ShimejiGif) -> Unit) :
             binding.tvName.text = item.name ?: item.nick ?: "Unknown"
             if (item.downloaded) {
                 binding.btnAction.text = MainApp.instances.getString(R.string.addToScreen)
+                binding.btnAction.setBackgroundDrawable(binding.btnAction.resources.getDrawable(com.tp.ads.R.drawable.bg_btn_active_pet,null))
             } else {
+                binding.btnAction.setBackgroundDrawable(binding.btnAction.resources.getDrawable(com.tp.ads.R.drawable.bg_btn_action_pet,null))
                 binding.btnAction.text = MainApp.instances.getString(R.string.download)
             }
             currentItem = item

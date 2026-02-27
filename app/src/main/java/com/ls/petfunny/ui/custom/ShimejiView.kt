@@ -251,6 +251,8 @@ class ShimejiView(context: Context) : SurfaceView(context), SurfaceHolder.Callba
                     canvas.drawBitmap(mascotBitmap, flipHorizontalMatrix, paint)
                 }
 
+            } catch (e: java.lang.IllegalStateException) {
+                Timber.e("Lỗi trong quá trình vẽ Shimeji: ${e.message}")
             } catch (e: Exception) {
                 Timber.e("Lỗi trong quá trình vẽ Shimeji: ${e.message}")
             } finally {

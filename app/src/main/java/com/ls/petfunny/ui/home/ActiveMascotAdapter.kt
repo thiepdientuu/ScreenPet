@@ -28,7 +28,7 @@ class ActiveMascotAdapter(private val onItemClick: (Mascots) -> Unit) :
         private var currentItem: Mascots? = null
 
         init {
-            binding.root.setOnClickListener {
+            binding.ivDelete.setOnClickListener {
                 currentItem?.let(onItemClick)
             }
         }

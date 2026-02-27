@@ -25,9 +25,17 @@
             app:itemIconTint="@color/nav_item_color_state"
             app:itemRippleColor="#226200EE"
             app:itemTextColor="@color/nav_item_color_state"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/layoutAds"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:menu="@menu/bottom_nav_menu" />
+
+        <FrameLayout
+            android:id="@+id/layoutAds"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

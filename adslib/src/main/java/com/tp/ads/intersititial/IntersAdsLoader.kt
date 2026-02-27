@@ -30,7 +30,7 @@ class IntersAdsLoader constructor(
     private var activityWeakRef: WeakReference<Activity>? = null
 
     var isLoadingInter = false
-    private var intervalShowInter = 10000L
+    private var intervalShowInter = 30000L
     private var lastTimeShowInter = 0L
 
     private var isForceLoadInter = false

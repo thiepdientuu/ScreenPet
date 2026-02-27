@@ -1,5 +1,6 @@
 package com.ls.petfunny.ui.pet
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.lifecycle.viewModelScope
@@ -15,6 +16,7 @@ import com.ls.petfunny.utils.AppLogger
 import com.ls.petfunny.utils.Constants
 import com.ls.petfunny.utils.TrackingHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +33,8 @@ import javax.inject.Inject
 class PetViewModel @Inject constructor(
     private val apiService: ApiService,
     private val teamListingService: TeamListingService,
-    private val repository: MascotsRepository
+    private val repository: MascotsRepository,
+    @ApplicationContext val context: Context
 ) : BaseViewModel() {
     private val _topPackCharacters = MutableStateFlow<List<ShimejiGif>>(emptyList())
     val topPackCharacters = _topPackCharacters.asStateFlow()
@@ -150,20 +153,20 @@ class PetViewModel @Inject constructor(
                         }
                         TrackingHelper.logEvent(AllEvents.DOWN_PET + "success")
                         // 2. Bắn sự kiện tải thành công
-                        _toastEvent.emit("Tải xuống ${shimejiGif.name} thành công!")
+                        _toastEvent.emit(context.getString(R.string.download_success) + " " +  shimejiGif.name)
                     } else {
                         TrackingHelper.logEvent(AllEvents.DOWN_PET + "fail")
-                        _toastEvent.emit("Tải xuống thất bại: Không tìm thấy ảnh trong gói.")
+                        _toastEvent.emit(context.getString(R.string.download_error))
                     }
                 } else {
                     TrackingHelper.logEvent(AllEvents.DOWN_PET + "fail")
-                    _toastEvent.emit("Lỗi máy chủ: ${response.code()}")
+                    _toastEvent.emit(context.getString(R.string.download_error))
                     AppLogger.e("HIHI MainViewModel --> Download API Error: ${response.code()}")
                 }
             } catch (e: Exception) {
                 TrackingHelper.logEvent(AllEvents.DOWN_PET + "fail")
                 AppLogger.e("HIHI MainViewModel --> download error: ${e.message}")
-                _toastEvent.emit("Đã xảy ra lỗi khi tải: ${e.localizedMessage}")
+                _toastEvent.emit(context.getString(R.string.download_error) + e.localizedMessage )
             } finally {
                 _isLoading.value = false
             }

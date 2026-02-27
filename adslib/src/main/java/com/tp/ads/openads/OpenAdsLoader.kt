@@ -79,14 +79,6 @@ class OpenAdsLoader
     }
 
     override fun loadAd(listener: AdsLoaderListener, isForceLoad: Boolean) {
-        if (!AppSession.canRequestAd || AppSession.isVipUser
-            || isOpenAdAvailable || isLoadingOpenAds || !AdsConfig.supportOpenAd
-        ) {
-            Logger.w("AdManager", "OpenAdLoader----->Return openAds load")
-            listener.onLoadFinish()
-            return
-        }
-
         Logger.w(TAG, "OpenAdLoader-----> handle load OpenAds ")
         isLoadingOpenAds = true
         AppOpenAd.load(

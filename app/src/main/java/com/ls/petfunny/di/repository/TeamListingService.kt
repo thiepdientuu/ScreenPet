@@ -104,6 +104,14 @@ class TeamListingService @Inject constructor(
         helper.saveActiveTeamMembers(current)
     }
 
+    fun inActiveMascotReal(id: Int) {
+        val current = helper.getActiveTeamMembers().toMutableList()
+        if (current.contains(id)) {
+            current.remove(id)
+        }
+        helper.saveActiveTeamMembers(current)
+    }
+
     fun activeMascot(id: Int) {
         val current = helper.getActiveTeamMembers().toMutableList()
         if (current.contains(id)) {

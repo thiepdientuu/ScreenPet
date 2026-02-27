@@ -10,6 +10,7 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
+import com.ls.petfunny.utils.AppLogger
 import java.util.UUID
 
 object AdManager {
@@ -39,6 +40,7 @@ object AdManager {
         mAdView.adListener = object : AdListener() {
             override fun onAdLoaded() {
                 super.onAdLoaded()
+                AppLogger.d("HIHI ---> Banner loaded")
                 container.visibility = View.VISIBLE
                 container.removeAllViews()
                 container.addView(mAdView)
@@ -46,6 +48,7 @@ object AdManager {
 
             override fun onAdFailedToLoad(p0: LoadAdError) {
                 super.onAdFailedToLoad(p0)
+                AppLogger.d("HIHI ---> Banner load fail")
                 if (adUnitHigh.isNotEmpty()) {
                     loadBannerAd(
                         adUnitHigh = "",

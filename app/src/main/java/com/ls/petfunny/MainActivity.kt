@@ -11,11 +11,15 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.gms.ads.AdError
 import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
 import com.ls.petfunny.ui.adapter.ShimejiAdapter
 import com.ls.petfunny.ui.adapter.ViewPagerAdapter
 import com.tp.ads.base.AdManager
+import com.tp.ads.base.AdsLoaderListener
+import com.tp.ads.base.AdsShowerListener
+import com.tp.ads.utils.AdCommonUtils
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -39,12 +43,25 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+        adManager.setActivity(this)
+        loadBannerHome()
         setupViewPager()
         setupBottomNavigation()
         setOnClickListener()
         setUpListPet()
         setUpObserver()
         viewModel.loadPack()
+        adManager.forceLoadInterAds(object : AdsLoaderListener() {})
+        adManager.loadCacheOpenAds()
+    }
+
+    private fun loadBannerHome() {
+        com.ls.petfunny.ui.ads.AdManager.loadBannerAd(
+            adUnitHigh = AdCommonUtils.BANNER_HOME_HIGH_KEY,
+            adUnitNormal = AdCommonUtils.BANNER_HOME_KEY,
+            container = binding.layoutAds,
+            showCollapsible = showCollapsibleBannerHome
+        )
     }
 
     private fun setupViewPager() {
@@ -69,7 +86,24 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> binding.viewPager.currentItem = 0
-                R.id.nav_pet -> binding.viewPager.currentItem = 1
+                R.id.nav_pet -> {
+                    adManager.showInterAds(this,object : AdsShowerListener() {
+                        override fun onAdDismissedFullScreenContent() {
+                            super.onAdDismissedFullScreenContent()
+                            binding.viewPager.currentItem = 1
+                        }
+
+                        override fun onAdFailedToShowFullScreenContent(p0: AdError) {
+                            super.onAdFailedToShowFullScreenContent(p0)
+                            binding.viewPager.currentItem = 1
+                        }
+
+                        override fun onShowAdsError() {
+                            super.onShowAdsError()
+                            binding.viewPager.currentItem = 1
+                        }
+                    })
+                }
                 R.id.nav_setting -> binding.viewPager.currentItem = 2
             }
             true
@@ -162,5 +196,9 @@ class MainActivity : AppCompatActivity() {
     fun stopShimejiService() {
         val intent = Intent(this, ShimejiService::class.java)
         stopService(intent)
+    }
+
+    companion object{
+        var showCollapsibleBannerHome = true
     }
 }

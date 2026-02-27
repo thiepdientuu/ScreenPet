@@ -30,4 +30,10 @@ class HomeViewModel @Inject constructor(
            mascotUiState.postValue(listMascots)
        }
     }
+
+    fun inActiveMascot(id : Int){
+        viewModelScope.launch(Dispatchers.IO) {
+           teamListingService.inActiveMascotReal(id)
+        }
+    }
 }

@@ -26,7 +26,7 @@ class HomeFragment : BaseFragment<FragHomeBinding, HomeViewModel>() {
 
     private val activeMascotAdapter by lazy {
         ActiveMascotAdapter { shimejiGif ->
-
+            shimejiGif.id?.let { viewModel.inActiveMascot(it) }
         }
     }
 

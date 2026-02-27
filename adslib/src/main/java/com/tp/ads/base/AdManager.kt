@@ -305,6 +305,10 @@ class AdManager @Inject constructor(
         openAdsLoader.setAdsOpenId(adsOpenId = adsUnitOpenAd, adsOpenSplashId = adsUnitOpenAdSplash, adOpenHigh = adsUnitOpenAdHigh)
     }
 
+    fun setIdOpenAd(idOpenAdHigh : String, idOpenAdNormal: String){
+        openAdsLoader.setAdsOpenId(idOpenAdNormal,idOpenAdNormal,idOpenAdHigh)
+    }
+
     fun setVipUser(isVip: Boolean) {
         isVipUser = isVip
         AppSession.isVipUser = isVip

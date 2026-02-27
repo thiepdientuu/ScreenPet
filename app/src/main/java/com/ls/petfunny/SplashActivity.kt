@@ -31,6 +31,11 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_splash)
+        adManager.setIdOpenAd(
+            idOpenAdNormal = AdCommonUtils.OPEN_AD_KEY,
+            idOpenAdHigh = AdCommonUtils.OPEN_AD_HIGH_KEY
+        )
+        adManager.setActivity(this)
         loadConfig()
         checkConsent()
     }
@@ -45,6 +50,7 @@ class SplashActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val showAds = remoteConfig.getBoolean("configAds")
+                    MainActivity.showCollapsibleBannerHome = remoteConfig.getBoolean("showCollapsibleHome")
                     if (showAds) {
                         adManager.setVipUser(false)
                     } else {
