@@ -57,7 +57,8 @@ class SplashActivity : AppCompatActivity() {
                     val intervalInter = remoteConfig.getLong("intervalInter")
                     adManager.setInterAdsTimeDelay(intervalInter.toInt())
                     MainActivity.showCollapsibleBannerHome = remoteConfig.getBoolean("showCollapsibleHome")
-                    if (showAds) {
+                    val versionCode = remoteConfig.getLong("vscodereview")
+                    if (showAds || versionCode.toInt() == BuildConfig.VERSION_CODE) {
                         adManager.setVipUser(false)
                     } else {
                         adManager.setVipUser(true)

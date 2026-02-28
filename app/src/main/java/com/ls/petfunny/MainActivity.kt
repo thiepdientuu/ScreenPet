@@ -170,6 +170,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object{
-        var showCollapsibleBannerHome = true
+        var showCollapsibleBannerHome = false
     }
 }
