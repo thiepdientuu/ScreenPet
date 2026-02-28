@@ -58,10 +58,10 @@ class SplashActivity : AppCompatActivity() {
                     adManager.setInterAdsTimeDelay(intervalInter.toInt())
                     MainActivity.showCollapsibleBannerHome = remoteConfig.getBoolean("showCollapsibleHome")
                     val versionCode = remoteConfig.getLong("vscodereview")
-                    if (showAds || versionCode.toInt() == BuildConfig.VERSION_CODE) {
-                        adManager.setVipUser(false)
-                    } else {
+                    if (!showAds || versionCode.toInt() == BuildConfig.VERSION_CODE) {
                         adManager.setVipUser(true)
+                    } else {
+                        adManager.setVipUser(false)
                     }
                     AppLogger.d("Fetch and activate succeeded show ads: $showAds")
                 } else {
