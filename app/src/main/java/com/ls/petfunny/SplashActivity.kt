@@ -54,6 +54,8 @@ class SplashActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     TrackingHelper.logEvent(AllEvents.CONFIG_LOAD + "success")
                     val showAds = remoteConfig.getBoolean("configAds")
+                    val intervalInter = remoteConfig.getLong("intervalInter")
+                    adManager.setInterAdsTimeDelay(intervalInter.toInt())
                     MainActivity.showCollapsibleBannerHome = remoteConfig.getBoolean("showCollapsibleHome")
                     if (showAds) {
                         adManager.setVipUser(false)
