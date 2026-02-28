@@ -14,7 +14,9 @@ import com.ls.petfunny.base.BaseFragment
 import com.ls.petfunny.data.AppPreferencesHelper
 import com.ls.petfunny.databinding.FragPetsBinding
 import com.ls.petfunny.ui.adapter.ShimejiAdapter
+import com.ls.petfunny.utils.AllEvents
 import com.ls.petfunny.utils.AppLogger
+import com.ls.petfunny.utils.TrackingHelper
 import com.tp.ads.base.AdManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -34,9 +36,11 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
     private val shimejiAdapter by lazy {
         ShimejiAdapter { shimejiGif ->
             if (shimejiGif.downloaded) {
+                TrackingHelper.logEvent(AllEvents.CLICK_SETTING)
                 viewModel.activeMascot(shimejiGif.id)
                 (activity as? MainActivity)?.gotoHome()
             } else {
+                TrackingHelper.logEvent(AllEvents.CLICK_DOWNLOAD)
                 viewModel.downloadShimejiV2(shimejiGif)
             }
         }
@@ -57,6 +61,11 @@ class PetFragment : BaseFragment<FragPetsBinding, PetViewModel>() {
         setUpView()
         setUpObserver()
         viewModel.loadPack()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        TrackingHelper.logEvent(AllEvents.VIEW_PET)
     }
 
     private fun setUpObserver() {

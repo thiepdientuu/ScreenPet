@@ -116,8 +116,7 @@ class ShimejiView(context: Context) : SurfaceView(context), SurfaceHolder.Callba
             return false
         }
     }
-
-    internal var handler1 = Handler(Looper.getMainLooper())
+    
     var height1: Int = 128
     internal var id = NEXT_ID.getAndIncrement()
     internal var isVisible = true

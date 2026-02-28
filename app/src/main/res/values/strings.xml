@@ -354,7 +354,7 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="starting">Wait…</string>
     <string name="onQueued">On Queued…</string>
     <string name="downloading2">Downloading</string>
-    <string name="loading">Loading</string>
+    <string name="loading">Loading Please wait ...</string>
     <string name="oops">Oops! Something went wrong</string>
     <string name="server_down">Check your internet connection. Please come back later.</string>
 
@@ -526,12 +526,17 @@ We want to give the best to our subscribers by adding more value.</string>
     <string name="changename">Change Name SV</string>
     <string name="changeavatarserver">Change Icon</string>
     <string name="serverarchived">Server Archived</string>
-    <string name="enable_begin">Enable to begin</string>
+    <string name="enable_begin">Enable to show pet</string>
     <string name="menu_home">Home</string>
     <string name="menu_pet">Pets</string>
     <string name="menu_setting">Setting</string>
     <string name="currentPestActive">Pest Active</string>
     <string name="download"> Download</string>
-    <string name="addToScreen"> Active</string>
+    <string name="addToScreen">Setting</string>
     <string name="download_success"> Download success</string>
+    <string name="error_unkow">Unknow error. Try again later!</string>
+    <string name="no_app_found">No app found for send mail!</string>
+    <string name="choose_app_send">Choose app send...</string>
+    <string name="update_speed_success">Update speed to</string>
+    <string name="update_size_success">Update size pet to</string>
 </resources>

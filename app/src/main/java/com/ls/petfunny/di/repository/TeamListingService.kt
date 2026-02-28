@@ -179,4 +179,12 @@ class TeamListingService @Inject constructor(
         return super.removeAt(position)
     }
 
+    fun updateSpeedPet(speed : String){
+        helper.setSpeedMultiplier(speed)
+    }
+
+    fun updateSizePet(size : String){
+        helper.setSizeMultiplier(size)
+    }
+
 }

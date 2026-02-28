@@ -1,5 +1,6 @@
 package com.ls.petfunny.ui
 
+import android.R.attr.action
 import android.app.KeyguardManager
 import android.app.Notification.PRIORITY_LOW
 import android.app.NotificationChannel
@@ -59,6 +60,8 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
     private var prefListener: PreferenceChangeListener? = null
     private var prefs: SharedPreferences? = null
 
+
+
     private var screenStatusReceiver: BroadcastReceiver? = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val kgMgr = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
@@ -92,6 +95,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
         SharedPreferences.OnSharedPreferenceChangeListener {
 
         override fun onSharedPreferenceChanged(prefs: SharedPreferences?, key: String?) {
+            AppLogger.e("${TAG} HIHI ---> onSharedPreferenceChanged key = $key ")
             if (isShimejiVisible && (key == AppConstants.ACTIVE_SHIMEJI_IDS || key == AppConstants.SIZE_MULTIPLIER)
             ) {
                 removeMascotViews()
@@ -129,6 +133,11 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
             TrackingHelper.logEvent(AllEvents.SERVICE_START)
             mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager
             prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
+            prefListener = PreferenceChangeListener()
+            prefs?.registerOnSharedPreferenceChangeListener(prefListener)
+            registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_OFF"))
+            registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_ON"))
+            registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.USER_PRESENT"))
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -145,14 +154,6 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
                 setForegroundNotification(isShimejiVisible)
                 removeMascotViews()
                 loadMascotViews()
-                if (this.prefs == null) {
-                    this.prefListener = PreferenceChangeListener()
-                    this.prefs = getSharedPreferences((AppConstants.MY_PREFS), Context.MODE_MULTI_PROCESS)
-                    this.prefs!!.registerOnSharedPreferenceChangeListener(this.prefListener)
-                }
-                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_OFF"))
-                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.SCREEN_ON"))
-                registerReceiver(this.screenStatusReceiver, IntentFilter("android.intent.action.USER_PRESENT"))
             }
         } catch (e: Exception) {
             AppLogger.e(e.message)
@@ -206,11 +207,6 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
                 }
             }
         }
-//        if (mascotView != null && mascotView.isShown) {
-//            mascotView.pauseAnimation()
-//            mascotView.isHidden = true
-//            mWindowManager.removeViewImmediate(mascotView)
-//        }
     }
 
     fun loadMascotViews() {
@@ -218,7 +214,7 @@ class ShimejiService : Service(), Choreographer.FrameCallback {
             val mascots: List<Int> = helper.getActiveTeamMembers()
             withContext(Dispatchers.IO) {
                 AppLogger.e("${TAG} ---> Loading list mascots active: %s", mascots)
-                spritesService.setSizeMultiplier(2.0)
+                spritesService.setSizeMultiplier(helper.getSizeMultiplier(this@ShimejiService))
                 spritesService.loadSpritesForMascots(mascots)
             }
             lateinit var params: LayoutParams

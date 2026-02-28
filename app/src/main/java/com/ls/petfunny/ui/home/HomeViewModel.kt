@@ -8,6 +8,8 @@ import com.ls.petfunny.di.ApiService
 import com.ls.petfunny.di.repository.Helper
 import com.ls.petfunny.di.repository.MascotsRepository
 import com.ls.petfunny.di.repository.TeamListingService
+import com.ls.petfunny.utils.AllEvents
+import com.ls.petfunny.utils.TrackingHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +35,7 @@ class HomeViewModel @Inject constructor(
 
     fun inActiveMascot(id : Int){
         viewModelScope.launch(Dispatchers.IO) {
+            TrackingHelper.logEvent(AllEvents.CLICK_REMOVE_PET)
            teamListingService.inActiveMascotReal(id)
         }
     }

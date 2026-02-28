@@ -12,7 +12,9 @@ import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.ls.petfunny.databinding.ActivitySplashBinding
 import com.ls.petfunny.ui.ads.AdManager
+import com.ls.petfunny.utils.AllEvents
 import com.ls.petfunny.utils.AppLogger
+import com.ls.petfunny.utils.TrackingHelper
 import com.tp.ads.utils.AdCommonUtils
 import com.tp.ads.utils.AppSession
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +32,7 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        TrackingHelper.logEvent(AllEvents.VIEW_SPLASH)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_splash)
         adManager.setIdOpenAd(
             idOpenAdNormal = AdCommonUtils.OPEN_AD_KEY,
@@ -49,6 +52,7 @@ class SplashActivity : AppCompatActivity() {
         remoteConfig.fetchAndActivate()
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
+                    TrackingHelper.logEvent(AllEvents.CONFIG_LOAD + "success")
                     val showAds = remoteConfig.getBoolean("configAds")
                     MainActivity.showCollapsibleBannerHome = remoteConfig.getBoolean("showCollapsibleHome")
                     if (showAds) {
@@ -57,6 +61,8 @@ class SplashActivity : AppCompatActivity() {
                         adManager.setVipUser(true)
                     }
                     AppLogger.d("Fetch and activate succeeded show ads: $showAds")
+                } else {
+                    TrackingHelper.logEvent(AllEvents.CONFIG_LOAD + "fail")
                 }
             }
     }
@@ -99,15 +105,6 @@ class SplashActivity : AppCompatActivity() {
 
     private fun handleFinishShowInterSplash() {
         gotoHome()
-//        binding.containerIntro.visibility = View.VISIBLE
-//        binding.containerIntro.setSafeOnClickListener {  }
-//        addFragment(
-//            IntroFragment.newInstances(
-//                getString(R.string.msg_tittle_intro1),
-//                getString(R.string.msg_msg_intro1),
-//                IntroFragment.TYPE_INTRO_1
-//            )
-//        )
     }
 
     fun addFragment(fragment : Fragment){

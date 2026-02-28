@@ -56,20 +56,20 @@ class PetViewModel @Inject constructor(
                 val response = apiService.getPacks()
                 if (response.isSuccessful) {
                     val allPacks = response.body()?.packs // Giả sử model trả về object chứa list 'packs'
-
+                    val result = mutableListOf<ShimejiGif>()
                     if (!allPacks.isNullOrEmpty()) {
-                        // Tư duy Senior: Tìm pack có size lớn nhất
-                        val maxPack = allPacks.maxByOrNull { it.shimejigif.size }
-                        TrackingHelper.logEvent(AllEvents.LOAD_PET + "success_" + maxPack?.shimejigif?.size)
-                        AppLogger.d("HIHI --> Pack lớn nhất là: ${maxPack?.title} với ${maxPack?.shimejigif?.size} nhân vật")
                         val listMascots = repository.getAllMascotsSuspend()
-                        maxPack?.shimejigif?.forEach { shimejiGif ->
-                            if (listMascots.any { it.id == shimejiGif.id }) {
-                                shimejiGif.downloaded = true
-                                AppLogger.d("HIHI --> Shimeji đã download " + shimejiGif.name)
+                        allPacks.forEach { pack ->
+                            pack.shimejigif.forEach { shimejiGif ->
+                                if (listMascots.any { it.id == shimejiGif.id }) {
+                                    shimejiGif.downloaded = true
+                                    AppLogger.d("HIHI --> Shimeji đã download " + shimejiGif.name)
+                                }
                             }
+                            result.addAll(pack.shimejigif)
                         }
-                        _topPackCharacters.value = maxPack?.shimejigif ?: emptyList()
+                        TrackingHelper.logEvent(AllEvents.LOAD_PET + "success_" + result.size)
+                        _topPackCharacters.value = result
                     }
                 } else {
                     TrackingHelper.logEvent(AllEvents.LOAD_PET + "fail")

@@ -712,13 +712,13 @@ class AdManager @Inject constructor(
         adLoader.loadAd(buildAdRequest())
     }
 
-    fun loadNativeHomeHigh(adsUnit: String) {
+    fun loadNativeHomeHigh(adsUnitHigh: String, adUnitNormal : String) {
         if (AppSession.isVipUser || !AppSession.canRequestAd) return
-        Logger.w(TAG, "NativeFlow ---> Start loadNativeAds home high adUnit = $adsUnit")
+        Logger.w(TAG, "NativeFlow ---> Start loadNativeAds home high adUnit = $adsUnitHigh")
         val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
         val adOptions = NativeAdOptions.Builder()
             .setVideoOptions(videoOptions).build()
-        val adLoader = AdLoader.Builder(context, adsUnit)
+        val adLoader = AdLoader.Builder(context, adsUnitHigh)
             .forNativeAd { ad ->
                 ad.setOnPaidEventListener {
                     adsPreferencesHelper.saveTroasCache(
@@ -738,7 +738,7 @@ class AdManager @Inject constructor(
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     TrackingUtils.logEvent(EventUtils.NATIVE + "home_high_load_fail")
                     Logger.w(TAG, "NativeFlow ---> NativeAds  home high   onAdFailedToLoad ${adError.message}")
-                    loadNativeHome(adUnitNativeHome)
+                    loadNativeHome(adUnitNormal)
                 }
 
                 override fun onAdImpression() {
@@ -754,7 +754,7 @@ class AdManager @Inject constructor(
     }
 
     fun loadNativeHome(adsUnit: String) {
-        if (AppSession.isVipUser || !AppSession.canRequestAd || nativeHome.value != null) return
+        if (AppSession.isVipUser || !AppSession.canRequestAd) return
         Logger.w(TAG, "NativeFlow ---> Start loadNativeAds language adUnit = $adsUnit")
         val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
         val adOptions = NativeAdOptions.Builder()

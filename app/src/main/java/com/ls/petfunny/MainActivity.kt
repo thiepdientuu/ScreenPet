@@ -16,6 +16,8 @@ import com.ls.petfunny.databinding.ActivityMainBinding
 import com.ls.petfunny.ui.ShimejiService
 import com.ls.petfunny.ui.adapter.ShimejiAdapter
 import com.ls.petfunny.ui.adapter.ViewPagerAdapter
+import com.ls.petfunny.utils.AllEvents
+import com.ls.petfunny.utils.TrackingHelper
 import com.tp.ads.base.AdManager
 import com.tp.ads.base.AdsLoaderListener
 import com.tp.ads.base.AdsShowerListener
@@ -33,24 +35,16 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var binding : ActivityMainBinding
 
-
-    private val shimejiAdapter by lazy {
-        ShimejiAdapter { shimejiGif ->
-            viewModel.downloadShimejiV2(shimejiGif)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
         adManager.setActivity(this)
+        TrackingHelper.logEvent(AllEvents.VIEW_MAIN)
         loadBannerHome()
         setupViewPager()
         setupBottomNavigation()
         setOnClickListener()
-        setUpListPet()
         setUpObserver()
-        viewModel.loadPack()
         adManager.forceLoadInterAds(object : AdsLoaderListener() {})
         adManager.loadCacheOpenAds()
     }
@@ -72,71 +66,45 @@ class MainActivity : AppCompatActivity() {
 
         // Tối ưu: Giữ sẵn 1 page bên cạnh để scroll mượt hơn
         binding.viewPager.offscreenPageLimit = 2
-
-        // Lắng nghe sự kiện vuốt để cập nhật BottomNav tương ứng
-        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-
-            }
-        })
     }
 
     private fun setupBottomNavigation() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> binding.viewPager.currentItem = 0
+                R.id.nav_home -> {
+                    loadNativeHome()
+                    binding.viewPager.setCurrentItem(0,false)
+                }
                 R.id.nav_pet -> {
                     adManager.showInterAds(this,object : AdsShowerListener() {
                         override fun onAdDismissedFullScreenContent() {
                             super.onAdDismissedFullScreenContent()
-                            binding.viewPager.currentItem = 1
+                            binding.viewPager.setCurrentItem(1,false)
                         }
 
                         override fun onAdFailedToShowFullScreenContent(p0: AdError) {
                             super.onAdFailedToShowFullScreenContent(p0)
-                            binding.viewPager.currentItem = 1
+                            binding.viewPager.setCurrentItem(1,false)
                         }
 
                         override fun onShowAdsError() {
                             super.onShowAdsError()
-                            binding.viewPager.currentItem = 1
+                            binding.viewPager.setCurrentItem(1,false)
                         }
                     })
                 }
-                R.id.nav_setting -> binding.viewPager.currentItem = 2
+                R.id.nav_setting -> binding.viewPager.setCurrentItem(2,false)
             }
             true
         }
     }
 
     private fun setOnClickListener() {
-//        binding.btnStartInfo.setOnClickListener {
-//            if (checkOverlayPermission()) {
-//                startShimejiService()
-//            } else {
-//                requestOverlayPermission()
-//            }
-//        }
-//
-//        binding.btnStopInfo.setOnClickListener {
-//            stopShimejiService()
-//        }
     }
 
     private fun setUpObserver() {
 
     }
-
-    private fun setUpListPet() {
-//        binding.rvPet.apply {
-//            // Hiển thị 4 cột như yêu cầu của bạn
-//            layoutManager = GridLayoutManager(this@MainActivity, 4)
-//            adapter = shimejiAdapter
-//            setHasFixedSize(true)
-//        }
-    }
-
 
     private fun checkOverlayPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -154,23 +122,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun gotoPetStore(){
-        binding.bottomNav.selectedItemId = R.id.nav_pet
-    }
-
     fun gotoHome(){
         binding.bottomNav.selectedItemId = R.id.nav_home
     }
 
+    fun loadNativeHome(){
+        adManager.loadNativeHomeHigh(
+            adsUnitHigh = AdCommonUtils.NATIVE_HOME_HIGH_KEY,
+            adUnitNormal = AdCommonUtils.NATIVE_HOME_NORMAL_KEY
+        )
+    }
+
     // Yêu cầu quyền vẽ đè
     fun requestOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            overlayPermissionLauncher.launch(intent)
-        }
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName")
+        )
+        overlayPermissionLauncher.launch(intent)
     }
 
     // Lắng nghe kết quả sau khi người dùng cấp quyền
@@ -178,8 +147,10 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (checkOverlayPermission()) {
+            TrackingHelper.logEvent(AllEvents.PERMISSION + "accept")
             startShimejiService()
         } else {
+            TrackingHelper.logEvent(AllEvents.PERMISSION + "deny")
             Toast.makeText(this, getString(R.string.need_permision), Toast.LENGTH_SHORT).show()
         }
     }

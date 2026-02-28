@@ -36,6 +36,12 @@ class Helper(
         )
     }
 
+    fun setSpeedMultiplier(speed : String){
+        val prefs = context.getSharedPreferences(AppConstants.MY_PREFS, MODE_MULTI_PROCESS)
+        val edit = prefs.edit()
+        edit.putString(AppConstants.ANIMATION_SPEED, speed).commit()
+    }
+
     fun getNotificationVisibility(context: Context): Boolean {
         return context.getSharedPreferences(AppConstants.MY_PREFS, MODE_MULTI_PROCESS)
             .getBoolean(AppConstants.SHOW_NOTIFICATION, AppConstants.DEFAULT_SHOW_NOTIFICATION)
@@ -45,8 +51,14 @@ class Helper(
         return java.lang.Double.parseDouble(
             context.getSharedPreferences
                 (AppConstants.MY_PREFS, MODE_MULTI_PROCESS)
-                .getString(AppConstants.SIZE_MULTIPLIER, "2.0")!!
+                .getString(AppConstants.SIZE_MULTIPLIER, "1.5")!!
         )
+    }
+
+    fun setSizeMultiplier(size : String){
+        val prefs = context.getSharedPreferences(AppConstants.MY_PREFS, MODE_MULTI_PROCESS)
+        val edit = prefs.edit()
+        edit.putString(AppConstants.SIZE_MULTIPLIER, size).commit()
     }
 
 
